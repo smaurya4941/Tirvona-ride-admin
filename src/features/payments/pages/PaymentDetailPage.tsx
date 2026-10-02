@@ -18,7 +18,7 @@ import type { EarningStatus } from "@/features/earnings/api/earnings";
 
 function Section({ title, children, className = "", action }: { title: string; children: ReactNode; className?: string; action?: ReactNode }) {
   return (
-    <section className={`rounded-2xl border border-slate-200 bg-white p-5 ${className}`}>
+    <section className={`rounded-xl shadow-sm border border-slate-200 bg-white p-5 ${className}`}>
       <div className="mb-4 flex items-center justify-between gap-2">
         <h2 className="text-base font-semibold text-midnight">{title}</h2>
         {action}
@@ -183,7 +183,7 @@ export function PaymentDetailPage() {
   };
 
   return (
-    <div className="mx-auto max-w-6xl space-y-6">
+    <div className="mx-auto max-w-6xl space-y-5">
       <Link to="/payments" className="inline-flex items-center gap-1 text-sm text-slate-600 hover:text-bhagwa-600">
         <ArrowLeft className="h-4 w-4" aria-hidden /> Payments
       </Link>

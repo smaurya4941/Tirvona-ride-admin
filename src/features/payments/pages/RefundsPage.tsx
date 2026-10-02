@@ -34,7 +34,7 @@ export function RefundsPage() {
   };
 
   return (
-    <div className="mx-auto max-w-7xl space-y-6">
+    <div className="mx-auto max-w-7xl space-y-5">
       <Link to="/payments" className="inline-flex items-center gap-1 text-sm text-slate-600 hover:text-bhagwa-600">
         <ArrowLeft className="h-4 w-4" aria-hidden /> Payments
       </Link>
@@ -62,7 +62,7 @@ export function RefundsPage() {
         </label>
       </div>
 
-      <section className="overflow-hidden rounded-2xl border border-slate-200 bg-white">
+      <section className="overflow-hidden rounded-xl border border-slate-200 bg-white shadow-sm">
         <LoadState pending={isPending} error={error} empty={data?.items.length === 0} emptyText="No refunds match these filters.">
           <div className="overflow-x-auto">
             <table className="w-full text-left text-sm">

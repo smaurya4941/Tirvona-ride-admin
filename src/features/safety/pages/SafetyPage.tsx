@@ -98,7 +98,7 @@ export function SafetyPage() {
   }
 
   return (
-    <div className="mx-auto max-w-7xl space-y-6">
+    <div className="mx-auto max-w-7xl space-y-5">
       <header>
         <h1 className="flex items-center gap-2 text-2xl font-bold text-midnight">
           <ShieldAlert className="h-6 w-6 text-red-600" aria-hidden /> Safety & SOS
@@ -125,7 +125,7 @@ export function SafetyPage() {
         render={(value) => (value === undefined ? "All" : value === "OPEN" ? "Active" : titleCase(value))}
       />
 
-      <section className="overflow-hidden rounded-2xl border border-slate-200 bg-white">
+      <section className="overflow-hidden rounded-xl border border-slate-200 bg-white shadow-sm">
         {isPending ? (
           <p className="flex items-center gap-2 px-5 py-10 text-sm text-slate-500">
             <Loader2 className="h-4 w-4 animate-spin" aria-hidden /> Loading alerts…

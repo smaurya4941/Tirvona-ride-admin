@@ -11,7 +11,7 @@ import { RidePaymentBadge } from "@/features/payments/components/PaymentBadges";
 
 function Section({ title, children, className = "" }: { title: string; children: ReactNode; className?: string }) {
   return (
-    <section className={`rounded-2xl border border-slate-200 bg-white p-5 ${className}`}>
+    <section className={`rounded-xl border border-slate-200 bg-white shadow-sm p-5 ${className}`}>
       <h2 className="mb-4 text-base font-semibold text-midnight">{title}</h2>
       {children}
     </section>
@@ -116,7 +116,7 @@ export function RideDetailPage() {
   const canCancel = ADMIN_CANCELLABLE.includes(ride.status);
 
   return (
-    <div className="mx-auto max-w-6xl space-y-6">
+    <div className="mx-auto max-w-6xl space-y-5">
       <Link to="/rides" className="inline-flex items-center gap-1 text-sm text-slate-600 hover:text-slate-900">
         <ArrowLeft className="h-4 w-4" aria-hidden /> All rides
       </Link>

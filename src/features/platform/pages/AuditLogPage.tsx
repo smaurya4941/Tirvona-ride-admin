@@ -42,7 +42,7 @@ export function AuditLogPage() {
   const { data, error, isPending, isFetching } = useAuditLog({ page, targetType, targetId });
 
   return (
-    <div className="mx-auto max-w-6xl space-y-6">
+    <div className="mx-auto max-w-6xl space-y-5">
       <PageHeader title="Audit log" subtitle="Every high-impact admin action: who did what, to which record, why and when. Read-only." />
       <FilterTabs<string>
         label="Record type"
@@ -59,7 +59,7 @@ export function AuditLogPage() {
           </button>
         </p>
       )}
-      <section className="overflow-hidden rounded-2xl border border-slate-200 bg-white">
+      <section className="overflow-hidden rounded-xl border border-slate-200 bg-white shadow-sm">
         <LoadState pending={isPending} error={error} empty={data?.items.length === 0} emptyText="No admin actions recorded yet.">
           {data && (
             <>

@@ -55,7 +55,7 @@ function Overview({ range }: { range: RangeQuery }) {
   return (
     <LoadState pending={isPending} error={error}>
       {data && (
-        <div className="space-y-6">
+        <div className="space-y-5">
           <Grid>
             <StatCard label="Rides requested" value={count(data.rides.requested)} />
             <StatCard label="Completed" value={count(data.rides.completed)} tone="good" />
@@ -81,7 +81,7 @@ function Rides({ range }: { range: RangeQuery }) {
   return (
     <LoadState pending={isPending} error={error}>
       {data && (
-        <div className="space-y-6">
+        <div className="space-y-5">
           <p className="text-sm text-slate-500">Rides requested in the range, counted by where they ended up.</p>
           <Grid>
             <StatCard label="Requested" value={count(data.totals.requested)} />
@@ -133,7 +133,7 @@ function Revenue({ range }: { range: RangeQuery }) {
   return (
     <LoadState pending={isPending} error={error}>
       {data && (
-        <div className="space-y-6">
+        <div className="space-y-5">
           <Grid>
             <StatCard label="Gross booked value" value={money(data.totals.grossBookedValue)} hint="Estimated fare of rides requested" />
             <StatCard label="Completed ride value" value={money(data.totals.completedRideValue)} />
@@ -188,7 +188,7 @@ function Drivers({ range }: { range: RangeQuery }) {
   return (
     <LoadState pending={isPending} error={error}>
       {data && (
-        <div className="space-y-6">
+        <div className="space-y-5">
           <Grid>
             <StatCard label="All drivers" value={count(data.totals.total)} />
             <StatCard label="Onboarding / under review" value={`${data.totals.pendingKyc} / ${data.totals.underReview}`} to="/drivers?status=UNDER_REVIEW" />
@@ -232,7 +232,7 @@ function Customers({ range }: { range: RangeQuery }) {
   return (
     <LoadState pending={isPending} error={error}>
       {data && (
-        <div className="space-y-6">
+        <div className="space-y-5">
           <Grid>
             <StatCard label="All customers" value={count(data.totals.total)} />
             <StatCard label="New in range" value={count(data.totals.new)} tone="good" />
@@ -265,7 +265,7 @@ function Cancellations({ range }: { range: RangeQuery }) {
   return (
     <LoadState pending={isPending} error={error}>
       {data && (
-        <div className="space-y-6">
+        <div className="space-y-5">
           <Grid>
             <StatCard label="Cancellations" value={count(data.totals.total)} hint={`${data.totals.cancellationRate}% of requests`} />
             <StatCard label="By customers" value={count(data.totals.byCustomer)} />
@@ -307,7 +307,7 @@ function Promotions({ range }: { range: RangeQuery }) {
   return (
     <LoadState pending={isPending} error={error}>
       {data && (
-        <div className="space-y-6">
+        <div className="space-y-5">
           <Grid>
             <StatCard label="Promo codes" value={count(data.totals.promos)} hint={`${data.totals.activePromos} active · ${data.totals.liveNow} live now`} to="/promotions" />
             <StatCard label="Applied at booking" value={count(data.totals.applied)} hint={`${data.totals.released} given back on cancellation`} />
@@ -354,7 +354,7 @@ export function ReportsPage() {
   }
 
   return (
-    <div className="mx-auto max-w-6xl space-y-6">
+    <div className="mx-auto max-w-6xl space-y-5">
       <PageHeader title="Reports" subtitle={`Aggregated from the live records · days in India time · refreshed ${formatDateTime(new Date().toISOString())}`} />
       <div className="flex flex-wrap items-center gap-3">
         <FilterTabs<Preset> label="Date range" options={PRESETS} value={preset} onChange={(value) => update({ preset: value ?? "LAST_7_DAYS" })} render={(value) => titleCase(value ?? "")} />

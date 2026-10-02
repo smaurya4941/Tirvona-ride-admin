@@ -114,7 +114,7 @@ export function BroadcastsPage() {
   const [confirm, setConfirm] = useState<{ broadcast: Broadcast; action: "send" | "cancel" } | null>(null);
 
   return (
-    <div className="mx-auto max-w-5xl space-y-6">
+    <div className="mx-auto max-w-5xl space-y-5">
       <PageHeader
         title="Broadcasts"
         subtitle="Announcements sent by operations. Ride, payment and safety notifications are sent automatically by the system and are not managed here."
@@ -131,7 +131,7 @@ export function BroadcastsPage() {
         onChange={(value) => setParams(value ? { status: value } : {})}
         render={(value) => (value ? titleCase(value) : "History")}
       />
-      <section className="overflow-hidden rounded-2xl border border-slate-200 bg-white">
+      <section className="overflow-hidden rounded-xl border border-slate-200 bg-white shadow-sm">
         <LoadState pending={isPending} error={error} empty={data?.items.length === 0} emptyText="No broadcasts here.">
           {data && (
             <>

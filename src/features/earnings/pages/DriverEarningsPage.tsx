@@ -182,7 +182,7 @@ export function DriverEarningsPage() {
   const { driver, summary, ledger, payouts, adjustments } = data;
 
   return (
-    <div className="mx-auto max-w-7xl space-y-6">
+    <div className="mx-auto max-w-7xl space-y-5">
       <Link to="/earnings" className="inline-flex items-center gap-1 text-sm text-slate-600 hover:text-bhagwa-600">
         <ArrowLeft className="h-4 w-4" aria-hidden /> Driver earnings
       </Link>
@@ -257,7 +257,7 @@ export function DriverEarningsPage() {
         ))}
       </div>
 
-      <section className="overflow-hidden rounded-2xl border border-slate-200 bg-white">
+      <section className="overflow-hidden rounded-xl shadow-sm border border-slate-200 bg-white">
         {ledger.items.length === 0 ? (
           <p className="px-5 py-10 text-center text-sm text-slate-500">No earnings here.</p>
         ) : (
@@ -366,7 +366,7 @@ export function DriverEarningsPage() {
       </section>
 
       {adjustments.length > 0 && (
-        <section className="overflow-hidden rounded-2xl border border-slate-200 bg-white">
+        <section className="overflow-hidden rounded-xl shadow-sm border border-slate-200 bg-white">
           <div className="flex items-center justify-between border-b border-slate-200 px-5 py-4">
             <h2 className="flex items-center gap-2 text-base font-semibold text-midnight">
               <MinusCircle className="h-4 w-4 text-amber-600" aria-hidden /> Refund deductions
@@ -430,7 +430,7 @@ export function DriverEarningsPage() {
         </section>
       )}
 
-      <section className="overflow-hidden rounded-2xl border border-slate-200 bg-white">
+      <section className="overflow-hidden rounded-xl shadow-sm border border-slate-200 bg-white">
         <h2 className="border-b border-slate-200 px-5 py-4 text-base font-semibold text-midnight">Payout history</h2>
         {payouts.length === 0 ? (
           <p className="px-5 py-6 text-sm text-slate-500">No payouts recorded yet.</p>

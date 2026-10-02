@@ -37,7 +37,7 @@ function formatDate(value?: string): string {
 
 function Section({ title, children }: { title: string; children: ReactNode }) {
   return (
-    <section className="rounded-2xl border border-slate-200 bg-white p-5">
+    <section className="rounded-xl border border-slate-200 bg-white shadow-sm p-5">
       <h2 className="mb-4 text-base font-semibold text-midnight">{title}</h2>
       {children}
     </section>
@@ -120,7 +120,7 @@ export function DriverDetailPage() {
   const decisionError = approve.error?.message ?? null;
 
   return (
-    <div className="mx-auto max-w-5xl space-y-6">
+    <div className="mx-auto max-w-5xl space-y-5">
       <Link to="/drivers" className="inline-flex items-center gap-1 text-sm text-slate-600 hover:text-slate-900">
         <ArrowLeft className="h-4 w-4" aria-hidden /> All drivers
       </Link>
@@ -234,7 +234,7 @@ export function DriverDetailPage() {
         {vehicles.length === 0 ? (
           <p className="text-sm text-slate-500">No vehicle registered.</p>
         ) : (
-          <div className="space-y-6">
+          <div className="space-y-5">
             {vehicles.map(({ vehicle, documents: vehicleDocuments }) => (
               <div key={vehicle.id} className={vehicle.isActive ? "" : "opacity-60"}>
                 <dl className="grid grid-cols-2 gap-4 sm:grid-cols-4">

@@ -22,13 +22,13 @@ export function VehiclesPage() {
   }
 
   return (
-    <div className="mx-auto max-w-6xl space-y-6">
+    <div className="mx-auto max-w-6xl space-y-5">
       <PageHeader title="Vehicles" subtitle="Every registered vehicle and the driver it belongs to. Documents are reviewed on the driver's page." />
       <div className="flex flex-wrap items-center justify-between gap-3">
         <FilterTabs<VehicleType> label="Vehicle type" options={[undefined, ...VEHICLE_TYPES]} value={vehicleType} onChange={(type) => update({ type })} render={(type) => (type ? titleCase(type) : "All")} />
         <SearchBox value={search} onChange={(q) => update({ q })} placeholder="Registration number" />
       </div>
-      <section className="overflow-hidden rounded-2xl border border-slate-200 bg-white">
+      <section className="overflow-hidden rounded-xl border border-slate-200 bg-white shadow-sm">
         <LoadState pending={isPending} error={error} empty={data?.items.length === 0} emptyText="No vehicles match.">
           {data && (
             <>

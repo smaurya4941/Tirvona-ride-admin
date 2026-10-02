@@ -141,7 +141,7 @@ export function ComplaintDetailPage() {
     );
 
   return (
-    <div className="mx-auto max-w-6xl space-y-6">
+    <div className="mx-auto max-w-6xl space-y-5">
       <Link to="/complaints" className="inline-flex items-center gap-1 text-sm text-slate-600 hover:text-bhagwa-600">
         <ArrowLeft className="h-4 w-4" aria-hidden /> Complaints
       </Link>
@@ -161,7 +161,7 @@ export function ComplaintDetailPage() {
       </header>
 
       <div className="grid gap-6 lg:grid-cols-3">
-        <div className="space-y-6 lg:col-span-2">
+        <div className="space-y-5 lg:col-span-2">
           <Section title="Issue">
             <p className="text-lg font-semibold text-slate-900">{complaint.subject}</p>
             <p className="mt-2 whitespace-pre-line text-sm text-slate-700">{complaint.description}</p>
@@ -209,7 +209,7 @@ export function ComplaintDetailPage() {
           </Section>
         </div>
 
-        <div className="space-y-6">
+        <div className="space-y-5">
           <Workflow complaint={complaint} />
           <Section title="People">
             <dl className="space-y-4">

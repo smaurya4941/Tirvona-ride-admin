@@ -37,7 +37,7 @@ export function DriverChangesPage() {
   }
 
   return (
-    <div className="mx-auto max-w-7xl space-y-6">
+    <div className="mx-auto max-w-7xl space-y-5">
       <PageHeader
         title="Driver updates"
         subtitle={
@@ -61,7 +61,7 @@ export function DriverChangesPage() {
         onChange={(value) => apply({ status: value ?? "PENDING", page: 1 })}
         render={(value) => (value === "PENDING" ? "Waiting for review" : titleCase(value ?? ""))}
       />
-      <section className="overflow-hidden rounded-2xl border border-slate-200 bg-white">
+      <section className="overflow-hidden rounded-xl border border-slate-200 bg-white shadow-sm">
         <LoadState
           pending={isPending}
           error={error}

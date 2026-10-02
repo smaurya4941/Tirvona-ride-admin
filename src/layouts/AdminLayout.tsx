@@ -35,11 +35,11 @@ export function AdminLayout() {
   }
 
   const nav = (
-    <nav className="flex-1 space-y-4 overflow-y-auto px-3 pb-4" aria-label="Main">
+    <nav className="flex-1 space-y-3 overflow-y-auto px-2 pb-2" aria-label="Main">
       {navigation.map((section, index) => (
         <div key={section.title ?? index}>
           {section.title && (
-            <p className="px-3 pb-1 text-[11px] font-semibold uppercase tracking-wider text-slate-400">{section.title}</p>
+            <p className="px-2 pb-1 text-[10px] font-semibold uppercase tracking-wider text-slate-400">{section.title}</p>
           )}
           <div className="space-y-0.5">
             {section.items.map(({ label, path, icon: Icon }) => (
@@ -49,12 +49,12 @@ export function AdminLayout() {
                 end={path === "/"}
                 onClick={() => setOpen(false)}
                 className={() =>
-                  `flex items-center gap-3 rounded-lg px-3 py-1.5 text-sm font-medium ${
-                    path === activePath ? "bg-bhagwa-100 text-bhagwa-600" : "text-slate-700 hover:bg-slate-100"
+                  `group flex items-center gap-3 rounded-md px-2 py-1.5 text-[13px] font-medium transition-all ${
+                    path === activePath ? "bg-slate-900 text-white shadow-sm" : "text-slate-600 hover:bg-slate-100 hover:text-slate-900"
                   }`
                 }
               >
-                <Icon className="h-4 w-4" aria-hidden />
+                <Icon className={`h-4 w-4 ${path === activePath ? "text-slate-100" : "text-slate-400 group-hover:text-slate-600"}`} aria-hidden />
                 {label}
                 {counters[path] && (
                   <span
@@ -74,29 +74,28 @@ export function AdminLayout() {
   );
 
   const footer = (
-    <div className="border-t border-slate-200 p-3">
+    <div className="border-t border-slate-200 p-2">
       {current && (
-        <p className="truncate px-3 pb-2 text-xs text-slate-500">
+        <p className="truncate px-2 pb-1.5 text-[11px] text-slate-500">
           {[current.user.firstName, current.user.lastName].filter(Boolean).join(" ")} · {current.user.phone}
         </p>
       )}
       <button
         type="button"
         onClick={() => void handleSignOut()}
-        className="flex w-full items-center gap-3 rounded-lg px-3 py-2 text-sm text-slate-600 hover:bg-slate-100"
+        className="group flex w-full items-center gap-3 rounded-md px-2 py-1.5 text-[13px] font-medium text-slate-600 transition-colors hover:bg-slate-100 hover:text-slate-900"
       >
-        <LogOut className="h-4 w-4" aria-hidden />
+        <LogOut className="h-4 w-4 text-slate-400 group-hover:text-slate-600" aria-hidden />
         Sign out
       </button>
     </div>
   );
 
   return (
-    <div className="flex min-h-screen bg-sand">
-      <aside className="sticky top-0 hidden h-screen w-64 shrink-0 flex-col border-r border-slate-200 bg-white md:flex">
-        <div className="px-6 py-5">
-          <BrandLogo className="h-24 w-full" />
-          <p className="mt-2 text-center text-xs text-slate-500">Operations admin</p>
+    <div className="flex min-h-screen bg-slate-50">
+      <aside className="sticky top-0 hidden h-screen w-56 shrink-0 flex-col border-r border-slate-200 bg-white md:flex">
+        <div className="px-4 py-4">
+          <h2 className="text-sm font-bold text-slate-900">Tirvona Admin</h2>
         </div>
         {nav}
         {footer}
@@ -109,8 +108,8 @@ export function AdminLayout() {
             <button type="button" onClick={() => setOpen(false)} className="absolute right-3 top-3 rounded p-1 hover:bg-slate-100" aria-label="Close menu">
               <X className="h-5 w-5" />
             </button>
-            <div className="px-6 pb-4">
-              <BrandLogo className="h-20 w-full" />
+            <div className="px-4 pb-4">
+              <h2 className="text-sm font-bold text-slate-900">Tirvona Admin</h2>
             </div>
             {nav}
             {footer}

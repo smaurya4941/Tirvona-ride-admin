@@ -195,7 +195,7 @@ export function RideTypesPage() {
   const [toggling, setToggling] = useState<RideTypeRow | null>(null);
 
   return (
-    <div className="mx-auto max-w-6xl space-y-6">
+    <div className="mx-auto max-w-6xl space-y-5">
       <PageHeader
         title="Ride types"
         subtitle="The products customers book. Never deleted — switch one off and past rides stay readable."
@@ -206,7 +206,7 @@ export function RideTypesPage() {
         }
       />
       {update.error && !toggling && <Notice tone="error">{update.error.message}</Notice>}
-      <section className="overflow-hidden rounded-2xl border border-slate-200 bg-white">
+      <section className="overflow-hidden rounded-xl border border-slate-200 bg-white shadow-sm">
         <LoadState pending={isPending} error={error} empty={data?.length === 0}>
           <Table head={["Ride type", "Served by", "Seats", "Tariff", "Bookable", ""]}>
             {data?.map((row) => (

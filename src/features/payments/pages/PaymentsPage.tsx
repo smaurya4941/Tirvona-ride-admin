@@ -162,7 +162,7 @@ export function PaymentsPage() {
   }
 
   return (
-    <div className="mx-auto max-w-7xl space-y-6">
+    <div className="mx-auto max-w-7xl space-y-5">
       <header>
         <h1 className="text-2xl font-bold text-midnight">Payments</h1>
         <p className="text-sm text-slate-500">
@@ -172,7 +172,7 @@ export function PaymentsPage() {
 
       <Summary />
 
-      <form onSubmit={handleSubmit} className="grid gap-3 rounded-2xl border border-slate-200 bg-white p-4 md:grid-cols-4 lg:grid-cols-7">
+      <form onSubmit={handleSubmit} className="grid gap-3 rounded-xl shadow-sm border border-slate-200 bg-white p-4 md:grid-cols-4 lg:grid-cols-7">
         {TEXT_FILTERS.map(({ key, label, placeholder }) => (
           <label key={key} className="block">
             <span className="text-xs font-medium text-slate-600">{label}</span>
@@ -242,7 +242,7 @@ export function PaymentsPage() {
         })}
       </div>
 
-      <section className="overflow-hidden rounded-2xl border border-slate-200 bg-white">
+      <section className="overflow-hidden rounded-xl border border-slate-200 bg-white shadow-sm">
         {isPending ? (
           <p className="flex items-center gap-2 px-5 py-10 text-sm text-slate-500">
             <Loader2 className="h-4 w-4 animate-spin" aria-hidden /> Loading payments…

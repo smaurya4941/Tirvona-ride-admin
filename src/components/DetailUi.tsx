@@ -3,7 +3,7 @@ import { ChevronLeft, ChevronRight, Loader2 } from "lucide-react";
 
 export function Section({ title, children, className = "", action }: { title: string; children: ReactNode; className?: string; action?: ReactNode }) {
   return (
-    <section className={`rounded-2xl border border-slate-200 bg-white p-5 ${className}`}>
+    <section className={`rounded-xl border border-slate-200 bg-white p-5 shadow-sm ${className}`}>
       <div className="mb-4 flex items-center justify-between gap-2">
         <h2 className="text-base font-semibold text-midnight">{title}</h2>
         {action}
@@ -46,8 +46,8 @@ export function FilterTabs<T extends string>({
             role="tab"
             aria-selected={active}
             onClick={() => onChange(option)}
-            className={`rounded-full px-4 py-1.5 text-sm font-medium ${
-              active ? "bg-bhagwa-500 text-white" : "bg-white text-slate-700 ring-1 ring-slate-200 hover:bg-slate-50"
+            className={`rounded-full px-3 py-1 text-[13px] font-medium transition-colors ${
+              active ? "bg-slate-900 text-white shadow-sm" : "bg-white text-slate-600 ring-1 ring-inset ring-slate-200 hover:bg-slate-50 hover:text-slate-900"
             }`}
           >
             {render(option)}
@@ -77,7 +77,7 @@ export function Pager({
 }) {
   if (total === 0) return null;
   return (
-    <footer className="flex items-center justify-between border-t border-slate-200 px-5 py-3 text-sm text-slate-600">
+    <footer className="flex items-center justify-between border-t border-slate-200 px-4 py-3 text-[13px] text-slate-600">
       <span className="flex items-center gap-2">
         {(page - 1) * limit + 1}–{(page - 1) * limit + count} of {total}
         {fetching && <Loader2 className="h-3.5 w-3.5 animate-spin text-slate-400" aria-label="Refreshing" />}
@@ -87,17 +87,17 @@ export function Pager({
           type="button"
           disabled={page <= 1}
           onClick={() => onPage(page - 1)}
-          className="flex items-center gap-1 rounded-lg px-3 py-1.5 hover:bg-slate-100 disabled:opacity-40"
+          className="flex items-center gap-1 rounded-md px-3 py-1.5 hover:bg-slate-100 disabled:opacity-40 transition-colors"
         >
-          <ChevronLeft className="h-4 w-4" aria-hidden /> Previous
+          <ChevronLeft className="h-3.5 w-3.5" aria-hidden /> Previous
         </button>
         <button
           type="button"
           disabled={!hasMore}
           onClick={() => onPage(page + 1)}
-          className="flex items-center gap-1 rounded-lg px-3 py-1.5 hover:bg-slate-100 disabled:opacity-40"
+          className="flex items-center gap-1 rounded-md px-3 py-1.5 hover:bg-slate-100 disabled:opacity-40 transition-colors"
         >
-          Next <ChevronRight className="h-4 w-4" aria-hidden />
+          Next <ChevronRight className="h-3.5 w-3.5" aria-hidden />
         </button>
       </span>
     </footer>

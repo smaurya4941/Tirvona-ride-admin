@@ -32,6 +32,7 @@ import { ReportsPage } from "@/features/platform/pages/ReportsPage";
 import { RideTypesPage } from "@/features/platform/pages/RideTypesPage";
 import { VehiclesPage } from "@/features/platform/pages/VehiclesPage";
 import { ZoneEditorPage, ZonesPage } from "@/features/platform/pages/ZonesPage";
+import { SystemHealthPage } from "@/features/system/pages/SystemHealthPage";
 import { AdminLayout } from "@/layouts/AdminLayout";
 import { NotFoundPage } from "@/pages/NotFoundPage";
 
@@ -80,6 +81,7 @@ export const router = createBrowserRouter([
       { path: "broadcasts", element: <BroadcastsPage /> },
       { path: "reports", element: <ReportsPage /> },
       { path: "audit-log", element: <AuditLogPage /> },
+      { path: "system-health", element: <SystemHealthPage /> },
     ],
   },
   { path: "*", element: <NotFoundPage /> },

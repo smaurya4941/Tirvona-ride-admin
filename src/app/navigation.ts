@@ -1,4 +1,5 @@
 import {
+  Activity,
   Ban,
   Banknote,
   BarChart3,
@@ -59,6 +60,7 @@ export const navigation: NavSection[] = [
       { label: "Zones", path: "/zones", icon: MapIcon },
       { label: "Popular places", path: "/popular-places", icon: MapPin },
       { label: "Branding", path: "/branding", icon: Palette },
+      { label: "System health", path: "/system-health", icon: Activity },
     ],
   },
   {

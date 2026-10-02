@@ -37,7 +37,7 @@ export function DriverChangeDetailPage() {
       : null;
 
   return (
-    <div className="mx-auto max-w-5xl space-y-6">
+    <div className="mx-auto max-w-5xl space-y-5">
       <Link to="/driver-updates" className="inline-flex items-center gap-1 text-sm text-slate-600 hover:text-slate-900">
         <ArrowLeft className="h-4 w-4" aria-hidden /> Driver updates
       </Link>

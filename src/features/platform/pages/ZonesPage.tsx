@@ -51,7 +51,7 @@ export function ZonesPage() {
   }
 
   return (
-    <div className="mx-auto max-w-6xl space-y-6">
+    <div className="mx-auto max-w-6xl space-y-5">
       <PageHeader
         title="Zones"
         subtitle="Service areas. Once any zone is active, pickups must be inside an active zone; rides are tagged with their zone for reporting."
@@ -65,7 +65,7 @@ export function ZonesPage() {
         <FilterTabs<Zone["status"]> label="Zone status" options={[undefined, "ACTIVE", "INACTIVE"]} value={status} onChange={(value) => update({ status: value })} render={(value) => (value ? (value === "ACTIVE" ? "Active" : "Inactive") : "All")} />
         <SearchBox value={search} onChange={(q) => update({ q })} placeholder="Zone or city" />
       </div>
-      <section className="overflow-hidden rounded-2xl border border-slate-200 bg-white">
+      <section className="overflow-hidden rounded-xl border border-slate-200 bg-white shadow-sm">
         <LoadState pending={isPending} error={error} empty={data?.items.length === 0} emptyText="No zones yet — Tirvona currently serves pickups anywhere.">
           {data && (
             <>
@@ -156,7 +156,7 @@ export function ZoneEditorPage() {
 
   const zone = existing.data;
   return (
-    <div className="mx-auto max-w-5xl space-y-6">
+    <div className="mx-auto max-w-5xl space-y-5">
       <Link to="/zones" className="inline-flex items-center gap-1 text-sm text-slate-600 hover:text-slate-900">
         <ArrowLeft className="h-4 w-4" aria-hidden /> All zones
       </Link>

@@ -58,7 +58,7 @@ function EditCommission({ currentValue }: { currentValue: number }) {
   }
 
   return (
-    <form onSubmit={handleSubmit} noValidate className="rounded-2xl border border-slate-200 bg-white p-6">
+    <form onSubmit={handleSubmit} noValidate className="rounded-xl shadow-sm border border-slate-200 bg-white p-6">
       <h2 className="text-base font-semibold text-midnight">Edit commission</h2>
       <p className="mt-1 text-sm text-slate-500">
         Creates a new version. Earnings already recorded keep the rate they were created with.
@@ -116,7 +116,7 @@ export function CommissionPage() {
   const cancel = useCancelCommission();
 
   return (
-    <div className="mx-auto max-w-5xl space-y-6">
+    <div className="mx-auto max-w-5xl space-y-5">
       <header>
         <h1 className="text-2xl font-bold text-midnight">Commission</h1>
         <p className="text-sm text-slate-500">Tirvona's share of each paid ride. The driver earns the rest.</p>
@@ -132,7 +132,7 @@ export function CommissionPage() {
         </p>
       ) : (
         <>
-          <section className="flex flex-wrap items-center gap-6 rounded-2xl border border-slate-200 bg-white p-6">
+          <section className="flex flex-wrap items-center gap-6 rounded-xl shadow-sm border border-slate-200 bg-white p-6">
             <span className="flex h-14 w-14 items-center justify-center rounded-full bg-bhagwa-100 text-bhagwa-600">
               <Percent className="h-6 w-6" aria-hidden />
             </span>
@@ -155,7 +155,7 @@ export function CommissionPage() {
         </>
       )}
 
-      <section className="overflow-hidden rounded-2xl border border-slate-200 bg-white">
+      <section className="overflow-hidden rounded-xl shadow-sm border border-slate-200 bg-white">
         <h2 className="border-b border-slate-200 px-5 py-4 text-base font-semibold text-midnight">History</h2>
         {cancel.error && <p className="bg-red-50 px-5 py-2 text-sm text-red-700">{cancel.error.message}</p>}
         {history.data && (

@@ -72,7 +72,7 @@ function PricingEditor({ row }: { row: PricingRow }) {
 
   return (
     <div className="grid gap-6 lg:grid-cols-3">
-      <section className="rounded-2xl border border-slate-200 bg-white p-6 lg:col-span-2">
+      <section className="rounded-xl border border-slate-200 bg-white p-5 shadow-sm lg:col-span-2">
         <header className="mb-6 flex flex-wrap items-start justify-between gap-4">
           <div className="flex items-center gap-3">
             <span className="flex h-11 w-11 items-center justify-center rounded-full bg-bhagwa-100 text-bhagwa-600">
@@ -161,7 +161,7 @@ function PricingEditor({ row }: { row: PricingRow }) {
         )}
       </section>
 
-      <aside className="rounded-2xl border border-slate-200 bg-white p-6">
+      <aside className="rounded-xl border border-slate-200 bg-white p-5 shadow-sm">
         <h3 className="text-base font-semibold text-midnight">Fare preview</h3>
         <p className="mt-1 text-xs text-slate-500">Uses the values in the form, saved or not.</p>
         <div className="mt-4 grid grid-cols-2 gap-3">
@@ -217,7 +217,7 @@ export function PricingPage() {
   const current = data?.find((row) => row.rideType.code === selected) ?? data?.[0];
 
   return (
-    <div className="mx-auto max-w-6xl space-y-6">
+    <div className="mx-auto max-w-6xl space-y-5">
       <header>
         <h1 className="text-2xl font-bold text-midnight">Pricing</h1>
         <p className="text-sm text-slate-500">Tariffs per ride type. Fares are always calculated by the server.</p>

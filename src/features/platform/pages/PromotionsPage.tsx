@@ -190,7 +190,7 @@ export function PromotionsPage() {
   }
 
   return (
-    <div className="mx-auto max-w-6xl space-y-6">
+    <div className="mx-auto max-w-6xl space-y-5">
       <PageHeader
         title="Promo codes"
         subtitle="Codes are validated and reserved by the server at booking; usage is released if the ride is cancelled."
@@ -204,7 +204,7 @@ export function PromotionsPage() {
         <FilterTabs<Window> label="Validity" options={[undefined, "LIVE", "SCHEDULED", "EXPIRED"]} value={validity} onChange={(value) => update({ window: value })} render={(value) => (value ? titleCase(value) : "All")} />
         <SearchBox value={search} onChange={(q) => update({ q })} placeholder="Code or title" />
       </div>
-      <section className="overflow-hidden rounded-2xl border border-slate-200 bg-white">
+      <section className="overflow-hidden rounded-xl border border-slate-200 bg-white shadow-sm">
         <LoadState pending={isPending} error={error} empty={data?.items.length === 0} emptyText="No promo codes yet.">
           {data && (
             <>
@@ -255,7 +255,7 @@ export function PromoDetailPage() {
   const promo = data?.promo;
 
   return (
-    <div className="mx-auto max-w-5xl space-y-6">
+    <div className="mx-auto max-w-5xl space-y-5">
       <Link to="/promotions" className="inline-flex items-center gap-1 text-sm text-slate-600 hover:text-slate-900">
         <ArrowLeft className="h-4 w-4" aria-hidden /> All promo codes
       </Link>

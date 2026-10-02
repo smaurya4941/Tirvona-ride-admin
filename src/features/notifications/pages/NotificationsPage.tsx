@@ -21,7 +21,7 @@ export function NotificationsPage() {
   }
 
   return (
-    <div className="mx-auto max-w-4xl space-y-6">
+    <div className="mx-auto max-w-4xl space-y-5">
       <header className="flex flex-wrap items-center justify-between gap-4">
         <div>
           <h1 className="text-2xl font-bold text-midnight">Notifications</h1>
@@ -50,7 +50,7 @@ export function NotificationsPage() {
         render={(value) => (value ? "Unread" : "All")}
       />
 
-      <section className="overflow-hidden rounded-2xl border border-slate-200 bg-white">
+      <section className="overflow-hidden rounded-xl border border-slate-200 bg-white shadow-sm">
         {isPending ? (
           <p className="flex items-center gap-2 px-5 py-10 text-sm text-slate-500">
             <Loader2 className="h-4 w-4 animate-spin" aria-hidden /> Loading…

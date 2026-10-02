@@ -27,7 +27,7 @@ export function CustomersPage() {
   }
 
   return (
-    <div className="mx-auto max-w-6xl space-y-6">
+    <div className="mx-auto max-w-6xl space-y-5">
       <PageHeader title="Customers" subtitle="Find a customer, see their rides and money, block or unblock the account" />
       <div className="flex flex-wrap items-center justify-between gap-3">
         <FilterTabs<AccountStatus>
@@ -39,7 +39,7 @@ export function CustomersPage() {
         />
         <SearchBox value={search} onChange={(q) => update({ q })} placeholder="Name, phone or email" />
       </div>
-      <section className="overflow-hidden rounded-2xl border border-slate-200 bg-white">
+      <section className="overflow-hidden rounded-xl border border-slate-200 bg-white shadow-sm">
         <LoadState pending={isPending} error={error} empty={data?.items.length === 0} emptyText="No customers match.">
           {data && (
             <>

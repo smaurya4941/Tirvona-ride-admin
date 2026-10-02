@@ -141,7 +141,7 @@ export function PopularPlacesPage() {
   const [deleting, setDeleting] = useState<PopularPlace | null>(null);
 
   return (
-    <div className="mx-auto max-w-6xl space-y-6">
+    <div className="mx-auto max-w-6xl space-y-5">
       <PageHeader
         title="Popular places"
         subtitle="“Popular destinations” on the rider’s Home and Where to? screens. Riders see active places near them, nearest first."
@@ -153,7 +153,7 @@ export function PopularPlacesPage() {
       />
       {data && <p className="text-xs text-slate-500">Photos: {data.imageRule.hint}.</p>}
       {update.error && <Notice tone="error">{update.error.message}</Notice>}
-      <section className="overflow-hidden rounded-2xl border border-slate-200 bg-white">
+      <section className="overflow-hidden rounded-xl border border-slate-200 bg-white shadow-sm">
         <LoadState pending={isPending} error={error} empty={data?.places.length === 0} emptyText="No popular places yet">
           <Table head={["Place", "Photo", "City", "Location", "Shown", ""]}>
             {data?.places.map((place) => (

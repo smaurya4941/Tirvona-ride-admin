@@ -88,7 +88,7 @@ export function ComplaintsPage() {
   }
 
   return (
-    <div className="mx-auto max-w-7xl space-y-6">
+    <div className="mx-auto max-w-7xl space-y-5">
       <header>
         <h1 className="text-2xl font-bold text-midnight">Complaints</h1>
         <p className="text-sm text-slate-500">Issues reported by riders and drivers, optionally about a ride</p>
@@ -103,7 +103,7 @@ export function ComplaintsPage() {
         </div>
       )}
 
-      <div className="flex flex-wrap items-end gap-3 rounded-2xl border border-slate-200 bg-white p-4">
+      <div className="flex flex-wrap items-end gap-3 rounded-xl border border-slate-200 bg-white shadow-sm p-4">
         <form onSubmit={handleSearch} className="flex flex-1 items-end gap-2">
           <label className="block flex-1">
             <span className="text-xs font-medium text-slate-600">Search</span>
@@ -161,7 +161,7 @@ export function ComplaintsPage() {
         render={(value) => (value ? titleCase(value) : "All")}
       />
 
-      <section className="overflow-hidden rounded-2xl border border-slate-200 bg-white">
+      <section className="overflow-hidden rounded-xl border border-slate-200 bg-white shadow-sm">
         {isPending ? (
           <p className="flex items-center gap-2 px-5 py-10 text-sm text-slate-500">
             <Loader2 className="h-4 w-4 animate-spin" aria-hidden /> Loading complaints…

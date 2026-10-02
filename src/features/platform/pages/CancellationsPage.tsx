@@ -48,7 +48,7 @@ function Records() {
         </div>
         <SearchBox value={search} onChange={(q) => update({ q })} placeholder="Ride code" />
       </div>
-      <section className="overflow-hidden rounded-2xl border border-slate-200 bg-white">
+      <section className="overflow-hidden rounded-xl border border-slate-200 bg-white shadow-sm">
         <LoadState pending={isPending} error={error} empty={data?.items.length === 0} emptyText="No cancellations match.">
           {data && (
             <>
@@ -332,7 +332,7 @@ export function CancellationsPage() {
   const [params, setParams] = useSearchParams();
   const tab = (["records", "reasons", "policy"] as const).find((value) => value === params.get("tab")) ?? "records";
   return (
-    <div className="mx-auto max-w-6xl space-y-6">
+    <div className="mx-auto max-w-6xl space-y-5">
       <PageHeader title="Cancellations" subtitle="Who cancelled, why, in which state, and what it cost — plus the reasons list and the fee policy" />
       <FilterTabs<Tab>
         label="Section"

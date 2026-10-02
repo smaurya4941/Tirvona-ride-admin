@@ -41,10 +41,10 @@ export function LoadState({
 
 export function PageHeader({ title, subtitle, actions }: { title: string; subtitle?: string; actions?: ReactNode }) {
   return (
-    <header className="flex flex-wrap items-end justify-between gap-4">
+    <header className="flex flex-wrap items-center justify-between gap-4">
       <div>
-        <h1 className="text-2xl font-bold text-midnight">{title}</h1>
-        {subtitle && <p className="text-sm text-slate-500">{subtitle}</p>}
+        <h1 className="text-xl font-bold text-slate-900">{title}</h1>
+        {subtitle && <p className="mt-0.5 text-[13px] text-slate-500">{subtitle}</p>}
       </div>
       {actions && <div className="flex flex-wrap gap-2">{actions}</div>}
     </header>
@@ -78,14 +78,14 @@ export function SearchBox({ value, onChange, placeholder }: { value: string; onC
   return (
     <label className="relative block w-full max-w-sm">
       <span className="sr-only">{placeholder}</span>
-      <Search className="pointer-events-none absolute left-3 top-2.5 h-4 w-4 text-slate-400" aria-hidden />
+      <Search className="pointer-events-none absolute left-3 top-2 h-4 w-4 text-slate-400" aria-hidden />
       <input
         type="search"
         value={draft}
         maxLength={60}
         onChange={(event) => setDraft(event.target.value)}
         placeholder={placeholder}
-        className="w-full rounded-lg border border-slate-300 bg-white py-2 pl-9 pr-3 text-sm focus:border-bhagwa-500 focus:outline-none focus:ring-1 focus:ring-bhagwa-500"
+        className={`${inputClass} pl-9 w-full`}
       />
     </label>
   );
@@ -107,12 +107,12 @@ export function StatCard({
   const color = { default: "text-midnight", good: "text-emerald-600", warn: "text-amber-600", bad: "text-red-600", brand: "text-bhagwa-600" }[tone];
   const body = (
     <>
-      <p className="text-sm text-slate-500">{label}</p>
-      <p className={`mt-1.5 text-2xl font-semibold tabular-nums ${color}`}>{value}</p>
-      {hint && <p className="mt-1 text-xs text-slate-400">{hint}</p>}
+      <p className="text-xs font-medium text-slate-500">{label}</p>
+      <p className={`mt-1 text-lg font-semibold leading-none tabular-nums tracking-tight ${color}`}>{value}</p>
+      {hint && <p className="mt-1 text-[10px] uppercase tracking-wider text-slate-400">{hint}</p>}
     </>
   );
-  const className = "block rounded-2xl border border-slate-200 bg-white p-4";
+  const className = "block rounded-lg border border-slate-200 bg-white p-3 shadow-sm";
   return to ? (
     <Link to={to} className={`${className} transition hover:border-bhagwa-500`}>
       {body}
@@ -135,7 +135,7 @@ export function Pill({ children, tone = "slate" }: { children: ReactNode; tone?:
 }
 
 export const inputClass =
-  "w-full rounded-lg border border-slate-300 px-3 py-2 text-sm focus:border-bhagwa-500 focus:outline-none focus:ring-1 focus:ring-bhagwa-500 disabled:bg-slate-50";
+  "w-full rounded-md border border-slate-300 px-3 py-1.5 text-[13px] shadow-sm focus:border-slate-500 focus:outline-none focus:ring-1 focus:ring-slate-500 disabled:bg-slate-50";
 
 export function FormField({ label, hint, error, children }: { label: string; hint?: string; error?: string; children: ReactNode }) {
   return (
@@ -173,7 +173,7 @@ export function Button({
       type={type}
       onClick={onClick}
       disabled={disabled || busy}
-      className={`inline-flex items-center justify-center gap-2 rounded-lg px-4 py-2 text-sm font-semibold disabled:opacity-50 ${styles}`}
+      className={`inline-flex items-center justify-center gap-2 rounded-md px-3 py-2 text-[13px] font-medium shadow-sm transition-colors disabled:opacity-50 ${styles}`}
     >
       {busy && <Loader2 className="h-4 w-4 animate-spin" aria-hidden />}
       {children}
@@ -281,11 +281,11 @@ export function Toggle({ checked, onChange, label, disabled }: { checked: boolea
 export function Table({ head, children }: { head: string[]; children: ReactNode }) {
   return (
     <div className="overflow-x-auto">
-      <table className="w-full text-left text-sm">
-        <thead className="border-b border-slate-200 bg-slate-50 text-xs uppercase tracking-wide text-slate-500">
+      <table className="w-full text-left text-[13px]">
+        <thead className="border-b border-slate-200 bg-slate-50 text-[11px] uppercase tracking-wide text-slate-500">
           <tr>
             {head.map((label) => (
-              <th key={label} className="whitespace-nowrap px-5 py-3 font-medium">
+              <th key={label} className="whitespace-nowrap px-4 py-2 font-medium">
                 {label}
               </th>
             ))}
@@ -297,4 +297,4 @@ export function Table({ head, children }: { head: string[]; children: ReactNode 
   );
 }
 
-export const cell = "px-5 py-3 align-top";
+export const cell = "px-4 py-2.5 align-middle";

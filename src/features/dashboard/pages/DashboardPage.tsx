@@ -8,7 +8,7 @@ import { FilterTabs, Section } from "@/components/DetailUi";
 import { Notice, StatCard, inputClass } from "@/components/Ui";
 import { useDashboard } from "@/features/drivers/api/drivers";
 import type { DashboardRange } from "@/features/drivers/api/drivers";
-import { SystemHealthCard } from "@/features/system/components/SystemHealthCard";
+
 import { formatMoney } from "@/lib/format";
 
 const QUICK_ACTIONS: Array<{ label: string; to: string; icon: LucideIcon }> = [
@@ -40,7 +40,7 @@ function periodText(period: { from: string; to: string; days: number }): string 
 }
 
 function Heading({ children }: { children: string }) {
-  return <h2 className="text-sm font-semibold uppercase tracking-wide text-slate-500">{children}</h2>;
+  return <h2 className="text-[11px] font-semibold uppercase tracking-wider text-slate-500">{children}</h2>;
 }
 
 export function DashboardPage() {
@@ -62,35 +62,45 @@ export function DashboardPage() {
   const dash = (value?: number) => (value === undefined ? "—" : value.toLocaleString("en-IN"));
 
   return (
-    <div className="mx-auto max-w-6xl space-y-8">
-      <header>
-        <h1 className="text-2xl font-bold text-midnight">Dashboard</h1>
-        <p className="text-sm text-slate-500">Figures for the selected period, live operations and trends · refreshes every 15 s</p>
+    <div className="mx-auto max-w-6xl space-y-5">
+      <header className="flex flex-wrap items-center justify-between gap-4">
+        <h1 className="text-xl font-bold text-slate-900">Dashboard</h1>
+        
+        <div className="flex flex-wrap items-center gap-3">
+          <FilterTabs<Preset> label="Period" options={PRESETS} value={preset} onChange={(value) => choose(value ?? "TODAY")} render={(value) => (value ? PRESET_LABEL[value] : "")} />
+          {preset === "CUSTOM" && (
+            <form
+              className="flex flex-wrap items-center gap-2"
+              onSubmit={(event) => {
+                event.preventDefault();
+                if (custom.from && custom.to) setParams({ preset: "CUSTOM", from: custom.from, to: custom.to });
+              }}
+            >
+              <input type="date" aria-label="From" value={custom.from} max={custom.to || undefined} onChange={(event) => setCustom({ ...custom, from: event.target.value })} className={`${inputClass} w-auto`} />
+              <span className="text-sm text-slate-500">to</span>
+              <input type="date" aria-label="To" value={custom.to} min={custom.from || undefined} onChange={(event) => setCustom({ ...custom, to: event.target.value })} className={`${inputClass} w-auto`} />
+              <button type="submit" disabled={!custom.from || !custom.to} className="rounded-md bg-slate-900 px-3 py-1.5 text-[13px] font-medium text-white shadow-sm disabled:opacity-40 hover:bg-slate-800 transition-colors">
+                Apply
+              </button>
+            </form>
+          )}
+          {isFetching && <Loader2 className="h-4 w-4 animate-spin text-slate-400" aria-label="Loading" />}
+        </div>
       </header>
-
-      <div className="flex flex-wrap items-center gap-3">
-        <FilterTabs<Preset> label="Period" options={PRESETS} value={preset} onChange={(value) => choose(value ?? "TODAY")} render={(value) => (value ? PRESET_LABEL[value] : "")} />
-        {preset === "CUSTOM" && (
-          <form
-            className="flex flex-wrap items-center gap-2"
-            onSubmit={(event) => {
-              event.preventDefault();
-              if (custom.from && custom.to) setParams({ preset: "CUSTOM", from: custom.from, to: custom.to });
-            }}
-          >
-            <input type="date" aria-label="From" value={custom.from} max={custom.to || undefined} onChange={(event) => setCustom({ ...custom, from: event.target.value })} className={`${inputClass} w-auto`} />
-            <span className="text-sm text-slate-500">to</span>
-            <input type="date" aria-label="To" value={custom.to} min={custom.from || undefined} onChange={(event) => setCustom({ ...custom, to: event.target.value })} className={`${inputClass} w-auto`} />
-            <button type="submit" disabled={!custom.from || !custom.to} className="rounded-lg bg-midnight px-3 py-2 text-sm font-semibold text-white disabled:opacity-40">
-              Apply
-            </button>
-          </form>
-        )}
-        {isFetching && <Loader2 className="h-4 w-4 animate-spin text-slate-400" aria-label="Loading" />}
-      </div>
       {preset === "CUSTOM" && !(range.from && range.to) && <p className="text-sm text-slate-500">Pick a start and end date, then Apply.</p>}
 
       {error && <Notice tone="error">{error.message}</Notice>}
+
+      <section className="space-y-3">
+        <Heading>Quick actions</Heading>
+        <div className="flex flex-wrap gap-2">
+          {QUICK_ACTIONS.map(({ label, to, icon: Icon }) => (
+            <Link key={to} to={to} className="group flex items-center gap-2 rounded-md border-2 border-slate-200 bg-white px-3 py-1.5 text-[13px] font-semibold text-slate-700 shadow-sm transition-all hover:-translate-y-0.5 hover:border-slate-400 hover:text-slate-900 hover:shadow-md">
+              <Icon className="h-4 w-4 text-slate-500 transition-colors group-hover:text-slate-900" aria-hidden /> {label}
+            </Link>
+          ))}
+        </div>
+      </section>
 
       <section className="space-y-3">
         <Heading>{period ? `${PRESET_LABEL[preset]} · ${periodText(period)}` : PRESET_LABEL[preset]}</Heading>
@@ -114,13 +124,13 @@ export function DashboardPage() {
         <div className="grid grid-cols-2 gap-3 md:grid-cols-3 lg:grid-cols-6">
           <Link
             to="/safety"
-            className={`rounded-2xl border p-4 transition ${
+            className={`rounded-lg border p-3 shadow-sm transition ${
               data?.safety.unacknowledged ? "border-red-600 bg-red-600 text-white hover:bg-red-700" : "border-slate-200 bg-white hover:border-bhagwa-500"
             }`}
           >
-            <p className={`text-sm ${data?.safety.unacknowledged ? "text-red-50" : "text-slate-500"}`}>SOS alerts</p>
-            <p className={`mt-1.5 text-2xl font-semibold ${data?.safety.unacknowledged ? "" : data?.safety.open ? "text-red-600" : "text-emerald-600"}`}>{dash(data?.safety.open)}</p>
-            {!!data?.safety.unacknowledged && <p className="mt-1 text-xs font-semibold">{data.safety.unacknowledged} waiting for a response</p>}
+            <p className={`text-xs font-medium ${data?.safety.unacknowledged ? "text-red-50" : "text-slate-500"}`}>SOS alerts</p>
+            <p className={`mt-1 text-lg font-semibold leading-none tracking-tight ${data?.safety.unacknowledged ? "" : data?.safety.open ? "text-red-600" : "text-emerald-600"}`}>{dash(data?.safety.open)}</p>
+            {!!data?.safety.unacknowledged && <p className="mt-1 text-[10px] font-medium uppercase tracking-wider">{data.safety.unacknowledged} waiting for a response</p>}
           </Link>
           <StatCard label="Searching for driver" value={dash(data?.rides.searching)} to="/rides?status=SEARCHING" />
           <StatCard label="Drivers online" value={dash(data?.rides.driversOnline)} hint={data ? `${data.rides.driversMatchable} matchable (live GPS)` : undefined} />
@@ -138,7 +148,7 @@ export function DashboardPage() {
 
       <section className="space-y-3">
         <Heading>{period && period.days > 1 ? `Performance — ${periodText(period)}` : "Performance — last 7 days"}</Heading>
-        <div className="grid gap-6 lg:grid-cols-2">
+        <div className="grid gap-4 lg:grid-cols-2">
           <Section title="Rides">
             {data ? (
               <DayColumns
@@ -160,20 +170,9 @@ export function DashboardPage() {
         </div>
       </section>
 
-      <section className="space-y-3">
-        <Heading>Quick actions</Heading>
-        <div className="flex flex-wrap gap-3">
-          {QUICK_ACTIONS.map(({ label, to, icon: Icon }) => (
-            <Link key={to} to={to} className="flex items-center gap-2 rounded-xl border border-slate-200 bg-white px-4 py-3 text-sm font-semibold text-slate-800 transition hover:border-bhagwa-500 hover:text-bhagwa-600">
-              <Icon className="h-4 w-4" aria-hidden /> {label}
-            </Link>
-          ))}
-        </div>
-      </section>
 
-      <div className="grid gap-4 lg:grid-cols-3">
-        <SystemHealthCard />
-      </div>
+
+
     </div>
   );
 }

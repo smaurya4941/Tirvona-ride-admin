@@ -29,7 +29,7 @@ export function DriversPage() {
   }
 
   return (
-    <div className="mx-auto max-w-6xl space-y-6">
+    <div className="mx-auto max-w-6xl space-y-5">
       <PageHeader title="Drivers & KYC" subtitle="Review KYC submissions, approve, suspend and reinstate drivers" />
 
       <div className="flex flex-wrap items-center justify-between gap-3">
@@ -43,7 +43,7 @@ export function DriversPage() {
         <SearchBox value={search} onChange={(q) => update({ q })} placeholder="Name, phone or driver code" />
       </div>
 
-      <section className="overflow-hidden rounded-2xl border border-slate-200 bg-white">
+      <section className="overflow-hidden rounded-xl border border-slate-200 bg-white shadow-sm">
         <LoadState pending={isPending} error={error} empty={data?.items.length === 0} emptyText="No drivers match these filters.">
           {data && (
             <>

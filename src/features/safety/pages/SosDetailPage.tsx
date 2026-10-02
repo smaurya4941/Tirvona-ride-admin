@@ -129,7 +129,7 @@ export function SosDetailPage() {
   const latest = sos.locationUpdates.at(-1) ?? sos.location;
 
   return (
-    <div className="mx-auto max-w-6xl space-y-6">
+    <div className="mx-auto max-w-6xl space-y-5">
       <Link to="/safety" className="inline-flex items-center gap-1 text-sm text-slate-600 hover:text-bhagwa-600">
         <ArrowLeft className="h-4 w-4" aria-hidden /> Safety & SOS
       </Link>
@@ -150,7 +150,7 @@ export function SosDetailPage() {
       </header>
 
       <div className="grid gap-6 lg:grid-cols-3">
-        <div className="space-y-6 lg:col-span-2">
+        <div className="space-y-5 lg:col-span-2">
           <Section
             title="Location"
             action={
@@ -228,7 +228,7 @@ export function SosDetailPage() {
           </Section>
         </div>
 
-        <div className="space-y-6">
+        <div className="space-y-5">
           <Actions sos={sos} />
 
           <Section title="People">

@@ -14,7 +14,7 @@ export function BrandingPage() {
   const { data, isPending, error } = useAdminBranding();
 
   return (
-    <div className="space-y-6">
+    <div className="mx-auto max-w-6xl space-y-5">
       <PageHeader title="Branding" subtitle="The logo and splash screen shown in the Tirvona Ride customer and driver apps" />
       <Notice tone="warning">
         Apps download a new logo or splash the next time they open or come back to the foreground; a new splash screen shows from the
