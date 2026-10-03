@@ -48,6 +48,18 @@ export interface SosDetail extends SosListItem {
   locationUpdates: SosLocation[];
   emergencyContacts: Array<{ name: string; phone: string; relationship?: string; isPrimary: boolean }>;
   contactsNotification: "NOT_SENT" | "SENT" | "FAILED";
+  /** Every WhatsApp message sent to the contacts (location pin + live link), oldest first. */
+  contactAlerts: Array<{
+    name: string;
+    phone: string;
+    kind: "ALERT" | "UPDATE";
+    status: "SENT" | "FAILED";
+    failure?: string;
+    attempts: number;
+    at: string;
+  }>;
+  /** True while the contacts' live-tracking link works. */
+  trackingActive: boolean;
   resolutionNote?: string;
   handledBy: { id: string; name: string } | null;
   timeline: Array<{ status: SosStatus; at: string; byRole: string; by: string | null; note?: string }>;
@@ -130,6 +142,18 @@ export function useUpdateSos() {
   return useMutation({
     mutationFn: async ({ id, status, note }: { id: string; status: SosStatus; note?: string }) =>
       (await apiClient.patch<ApiSuccess<SosDetail>>(`/admin/sos/${id}`, { status, note: note || undefined })).data.data,
+    onSuccess: (detail) => {
+      queryClient.setQueryData(keys.detail(detail.id), detail);
+      return queryClient.invalidateQueries({ queryKey: keys.all });
+    },
+  });
+}
+
+/** Sends the WhatsApp alert again to the contacts it did not reach. */
+export function useNotifyContacts() {
+  const queryClient = useQueryClient();
+  return useMutation({
+    mutationFn: async (id: string) => (await apiClient.post<ApiSuccess<SosDetail>>(`/admin/sos/${id}/notify-contacts`)).data.data,
     onSuccess: (detail) => {
       queryClient.setQueryData(keys.detail(detail.id), detail);
       return queryClient.invalidateQueries({ queryKey: keys.all });

@@ -6,6 +6,7 @@ import { Button, ConfirmDialog, FormField, LoadState, Modal, Notice, PageHeader,
 import { formatMoney, titleCase } from "@/lib/format";
 import { RIDE_TYPE_ICONS, VEHICLE_TYPES, useCreateRideType, useRideTypes, useSetTariff, useUpdateRideType7 } from "../api";
 import type { CreateRideTypeInput, RideTypeRow, VehicleType } from "../api";
+import { formatKilometers, formatMeters, parseBounded, useRideDistanceConfigs } from "@/features/ride-config/api";
 
 const RATES = [
   { key: "baseFare", label: "Base fare", max: 5_000 },
@@ -55,6 +56,8 @@ function RideTypeForm({ row, onClose }: { row?: RideTypeRow; onClose: () => void
   });
   const [withTariff, setWithTariff] = useState(false);
   const [rates, setRates] = useState<RateDraft>(emptyRates);
+  const [distance, setDistance] = useState({ min: "", max: "" });
+  const limits = useRideDistanceConfigs().data?.limits;
   const [error, setError] = useState<string | null>(null);
   const mutation = row ? update : create;
 
@@ -85,7 +88,18 @@ function RideTypeForm({ row, onClose }: { row?: RideTypeRow; onClose: () => void
       if (!parsed.rates) return setError(parsed.error ?? "Check the tariff");
       pricing = parsed.rates;
     }
-    create.mutate({ code: form.code, ...common, isActive: Boolean(pricing), pricing }, { onSuccess: onClose });
+    // Trip distance limits: both or neither. A ride type needs them (and a tariff) to be bookable.
+    let tripDistance: CreateRideTypeInput["distance"];
+    if (distance.min.trim() !== "" || distance.max.trim() !== "" || withTariff) {
+      if (!limits) return setError("Distance limits are still loading, try again in a moment");
+      const minimum = parseBounded(distance.min, "Minimum trip distance", limits.minDistanceMeters, "meters", 0);
+      if ("error" in minimum) return setError(minimum.error);
+      const maximum = parseBounded(distance.max, "Maximum trip distance", limits.maxDistanceKm, "km", 3);
+      if ("error" in maximum) return setError(maximum.error);
+      if (minimum.value >= maximum.value * 1000) return setError("The minimum distance must be less than the maximum distance");
+      tripDistance = { minDistanceMeters: minimum.value, maxDistanceKm: maximum.value };
+    }
+    create.mutate({ code: form.code, ...common, isActive: Boolean(pricing), pricing, distance: tripDistance }, { onSuccess: onClose });
   }
 
   return (
@@ -130,9 +144,23 @@ function RideTypeForm({ row, onClose }: { row?: RideTypeRow; onClose: () => void
         </div>
         {!row && (
           <div className="rounded-xl border border-slate-200 p-3">
+            <p className="text-sm font-medium text-slate-800">Trip distance limits</p>
+            <div className="mt-2 grid grid-cols-2 gap-3">
+              <FormField label="Minimum (meters)">
+                <input inputMode="numeric" value={distance.min} onChange={(event) => setDistance({ ...distance, min: event.target.value })} className={inputClass} />
+              </FormField>
+              <FormField label="Maximum (km)">
+                <input inputMode="decimal" value={distance.max} onChange={(event) => setDistance({ ...distance, max: event.target.value })} className={inputClass} />
+              </FormField>
+            </div>
+            <p className="mt-1 text-xs text-slate-500">Required to make it bookable. You can also set them later on the Ride limits page.</p>
+          </div>
+        )}
+        {!row && (
+          <div className="rounded-xl border border-slate-200 p-3">
             <label className="flex items-center gap-3 text-sm font-medium text-slate-800">
               <input type="checkbox" checked={withTariff} onChange={(event) => setWithTariff(event.target.checked)} />
-              Set the tariff now and make it bookable
+              Set the tariff now and make it bookable (needs the trip distance limits above)
             </label>
             {withTariff && (
               <div className="mt-3">
@@ -189,6 +217,7 @@ function TariffForm({ row, onClose }: { row: RideTypeRow; onClose: () => void })
 
 export function RideTypesPage() {
   const { data, error, isPending } = useRideTypes();
+  const distances = useRideDistanceConfigs().data;
   const update = useUpdateRideType7();
   const [editing, setEditing] = useState<RideTypeRow | "new" | null>(null);
   const [tariffFor, setTariffFor] = useState<RideTypeRow | null>(null);
@@ -208,7 +237,7 @@ export function RideTypesPage() {
       {update.error && !toggling && <Notice tone="error">{update.error.message}</Notice>}
       <section className="overflow-hidden rounded-xl border border-slate-200 bg-white shadow-sm">
         <LoadState pending={isPending} error={error} empty={data?.length === 0}>
-          <Table head={["Ride type", "Served by", "Seats", "Tariff", "Bookable", ""]}>
+          <Table head={["Ride type", "Served by", "Seats", "Tariff", "Trip distance", "Bookable", ""]}>
             {data?.map((row) => (
               <tr key={row.rideType.code} className={row.rideType.isActive ? "" : "bg-slate-50/60"}>
                 <td className={cell}>
@@ -229,6 +258,20 @@ export function RideTypesPage() {
                       Set tariff
                     </button>
                   )}
+                </td>
+                <td className={cell}>
+                  {(() => {
+                    const config = distances?.items.find((item) => item.rideType.code === row.rideType.code)?.config;
+                    return config ? (
+                      <Link to="/ride-limits" className="text-slate-700 hover:underline">
+                        {formatMeters(config.minDistanceMeters)} – {formatKilometers(config.maxDistanceKm)}
+                      </Link>
+                    ) : (
+                      <Link to="/ride-limits" className="font-semibold text-bhagwa-600 hover:underline">
+                        Set limits
+                      </Link>
+                    );
+                  })()}
                 </td>
                 <td className={cell}>
                   <div className="flex items-center gap-2">
@@ -255,7 +298,7 @@ export function RideTypesPage() {
           body={
             toggling.rideType.isActive
               ? "Customers stop seeing it at once. Rides already booked continue normally."
-              : "Customers can book it immediately (a tariff is required)."
+              : "Customers can book it immediately (a tariff and trip distance limits are required)."
           }
           confirmLabel={toggling.rideType.isActive ? "Switch off" : "Activate"}
           danger={toggling.rideType.isActive}

@@ -18,6 +18,7 @@ import {
   Palette,
   Percent,
   Receipt,
+  Ruler,
   Scale,
   ShieldAlert,
   Tags,
@@ -59,6 +60,7 @@ export const navigation: NavSection[] = [
     title: "Configuration",
     items: [
       { label: "Ride types", path: "/ride-types", icon: Tags },
+      { label: "Ride limits", path: "/ride-limits", icon: Ruler },
       { label: "Pricing", path: "/pricing", icon: Receipt },
       { label: "Peak hours", path: "/pricing/peak-hours", icon: Zap },
       { label: "Zones", path: "/zones", icon: MapIcon },

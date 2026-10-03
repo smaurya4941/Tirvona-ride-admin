@@ -5,7 +5,7 @@ import { formatDateTime, titleCase } from "@/lib/format";
 import { useAuditLog } from "../api";
 import type { AuditEntry } from "../api";
 
-const TARGETS = ["DRIVER", "CUSTOMER", "RIDE", "RIDE_TYPE", "PRICING", "PEAK_SLOT", "ZONE", "PROMO", "CANCELLATION", "CANCELLATION_POLICY", "BROADCAST"] as const;
+const TARGETS = ["DRIVER", "CUSTOMER", "RIDE", "RIDE_TYPE", "PRICING", "PEAK_SLOT", "COMMISSION", "ZONE", "PROMO", "CANCELLATION", "CANCELLATION_POLICY", "BROADCAST"] as const;
 
 function targetLink(entry: AuditEntry): string | null {
   switch (entry.targetType) {
@@ -23,6 +23,8 @@ function targetLink(entry: AuditEntry): string | null {
       return "/ride-types";
     case "PRICING":
       return "/pricing";
+    case "COMMISSION":
+      return `/commission/${entry.targetId}`;
     case "PEAK_SLOT":
       return "/pricing/peak-hours";
     case "BROADCAST":

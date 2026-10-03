@@ -194,7 +194,11 @@ export interface PaymentDetail extends PaymentListItem {
   earning: {
     id: string;
     grossFare: number;
+    /** The ride type the commission was resolved for. */
+    rideType: string;
     commissionRate: number;
+    /** The ride type's commission version that applied. */
+    commissionVersion: number;
     commissionAmount: number;
     netEarning: number;
     status: string;
@@ -509,6 +513,9 @@ export type CommissionPhase = "SCHEDULED" | "CURRENT" | "SUPERSEDED" | "CANCELLE
 
 export interface Commission {
   id: string;
+  /** Absent on legacy global versions. */
+  rideType?: string;
+  /** Counts up per ride type. */
   version: number;
   type: "PERCENTAGE";
   value: number;
@@ -521,28 +528,36 @@ export interface Commission {
   cancelledAt?: string;
 }
 
+/** One ride type's commission: in force now, and what is scheduled. */
+export interface RideTypeCommission {
+  rideType: { code: string; displayName: string; isActive: boolean };
+  current: Commission | null;
+  scheduled: Commission[];
+}
+
 const commissionKey = ["admin", "commission"] as const;
 
-export function useCommission() {
+export function useCommissionOverview() {
   return useQuery({
-    queryKey: [...commissionKey, "current"],
+    queryKey: [...commissionKey, "overview"],
+    queryFn: async () => (await apiClient.get<ApiSuccess<RideTypeCommission[]>>("/admin/commission")).data.data,
+  });
+}
+
+export function useRideTypeCommission(rideType: string) {
+  return useQuery({
+    queryKey: [...commissionKey, "ride-type", rideType],
     queryFn: async () =>
-      (await apiClient.get<ApiSuccess<{ current: Commission; scheduled: Commission[] }>>("/admin/commission")).data.data,
+      (await apiClient.get<ApiSuccess<RideTypeCommission & { history: Commission[] }>>(`/admin/commission/${rideType}`)).data.data,
+    enabled: Boolean(rideType),
   });
 }
 
-export function useCommissionHistory() {
-  return useQuery({
-    queryKey: [...commissionKey, "history"],
-    queryFn: async () => (await apiClient.get<ApiSuccess<Commission[]>>("/admin/commission/history")).data.data,
-  });
-}
-
-export function useUpdateCommission() {
+export function useUpdateCommission(rideType: string) {
   const queryClient = useQueryClient();
   return useMutation({
     mutationFn: async (body: { value: number; effectiveFrom?: string; note?: string }) =>
-      (await apiClient.patch<ApiSuccess<Commission>>("/admin/commission", { type: "PERCENTAGE", ...body })).data.data,
+      (await apiClient.patch<ApiSuccess<Commission>>(`/admin/commission/${rideType}`, { type: "PERCENTAGE", ...body })).data.data,
     onSuccess: () => queryClient.invalidateQueries({ queryKey: commissionKey }),
   });
 }

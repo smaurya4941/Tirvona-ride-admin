@@ -112,15 +112,16 @@ export interface CreateRideTypeInput {
   sortOrder?: number;
   isActive?: boolean;
   pricing?: { baseFare: number; perKmRate: number; perMinuteRate: number; minimumFare: number };
+  distance?: { minDistanceMeters: number; maxDistanceKm: number };
 }
 
 const rideTypeKey = ["admin", "ride-types"] as const;
 export const useRideTypes = () => useApi<RideTypeRow[]>(rideTypeKey, "/admin/ride-types");
 export const useCreateRideType = () =>
-  useApiMutation((input: CreateRideTypeInput) => apiClient.post<ApiSuccess<RideTypeRow>>("/admin/ride-types", input), [rideTypeKey, ["admin", "pricing"]]);
+  useApiMutation((input: CreateRideTypeInput) => apiClient.post<ApiSuccess<RideTypeRow>>("/admin/ride-types", input), [rideTypeKey, ["admin", "pricing"], ["admin", "ride-distance-config"]]);
 export const useUpdateRideType7 = () =>
   useApiMutation(
-    ({ code, ...changes }: { code: string } & Partial<Omit<CreateRideTypeInput, "code" | "pricing">> & { reason?: string }) =>
+    ({ code, ...changes }: { code: string } & Partial<Omit<CreateRideTypeInput, "code" | "pricing" | "distance">> & { reason?: string }) =>
       apiClient.patch(`/admin/ride-types/${code}`, changes),
     [rideTypeKey, ["admin", "pricing"]],
   );

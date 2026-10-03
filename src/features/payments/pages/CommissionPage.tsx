@@ -1,125 +1,20 @@
-import { useState } from "react";
-import type { FormEvent } from "react";
-import { CalendarClock, CheckCircle2, Loader2, Percent, XCircle } from "lucide-react";
-import { formatDateTime, titleCase } from "@/lib/format";
-import { useCancelCommission, useCommission, useCommissionHistory, useUpdateCommission } from "../api/payments";
-import type { CommissionPhase } from "../api/payments";
+import { Link } from "react-router-dom";
+import { CalendarClock, ChevronRight, Loader2, Percent, XCircle } from "lucide-react";
+import { formatDateTime } from "@/lib/format";
+import { useCommissionOverview } from "../api/payments";
 
-const phaseStyles: Record<CommissionPhase, string> = {
-  CURRENT: "bg-emerald-100 text-emerald-800",
-  SCHEDULED: "bg-sky-100 text-sky-800",
-  SUPERSEDED: "bg-slate-100 text-slate-600",
-  CANCELLED: "bg-slate-200 text-slate-500 line-through",
-};
-
-const inputClass =
-  "mt-1 w-full rounded-lg border border-slate-300 px-3 py-2 text-sm focus:border-bhagwa-500 focus:outline-none focus:ring-1 focus:ring-bhagwa-500";
-
-function EditCommission({ currentValue }: { currentValue: number }) {
-  const update = useUpdateCommission();
-  const [value, setValue] = useState(String(currentValue));
-  const [effectiveFrom, setEffectiveFrom] = useState("");
-  const [note, setNote] = useState("");
-  const [saved, setSaved] = useState<string | null>(null);
-
-  const numeric = Number(value);
-  const valueError =
-    value.trim() === "" || !Number.isFinite(numeric)
-      ? "Enter a percentage"
-      : numeric < 0 || numeric > 100
-        ? "Between 0 and 100"
-        : !/^\d+(\.\d{1,2})?$/.test(value.trim())
-          ? "Up to 2 decimals"
-          : null;
-
-  function handleSubmit(event: FormEvent<HTMLFormElement>) {
-    event.preventDefault();
-    if (valueError) return;
-    setSaved(null);
-    update.mutate(
-      {
-        value: numeric,
-        // datetime-local is the admin's local time; send an absolute instant.
-        effectiveFrom: effectiveFrom ? new Date(effectiveFrom).toISOString() : undefined,
-        note: note.trim() || undefined,
-      },
-      {
-        onSuccess: (created) => {
-          setSaved(
-            created.phase === "SCHEDULED"
-              ? `Version ${created.version} (${created.value}%) is scheduled for ${formatDateTime(created.effectiveFrom)}.`
-              : `Version ${created.version} (${created.value}%) is now in force for new earnings.`,
-          );
-          setEffectiveFrom("");
-          setNote("");
-        },
-      },
-    );
-  }
-
-  return (
-    <form onSubmit={handleSubmit} noValidate className="rounded-xl shadow-sm border border-slate-200 bg-white p-6">
-      <h2 className="text-base font-semibold text-midnight">Edit commission</h2>
-      <p className="mt-1 text-sm text-slate-500">
-        Creates a new version. Earnings already recorded keep the rate they were created with.
-      </p>
-      <div className="mt-5 grid gap-4 sm:grid-cols-3">
-        <label className="block">
-          <span className="text-sm font-medium text-slate-800">Commission (%)</span>
-          <input
-            inputMode="decimal"
-            value={value}
-            onChange={(event) => setValue(event.target.value)}
-            aria-invalid={Boolean(valueError)}
-            className={inputClass}
-          />
-          <span className={`mt-1 block text-xs ${valueError ? "text-red-600" : "text-slate-500"}`}>
-            {valueError ?? "Percentage of the final fare"}
-          </span>
-        </label>
-        <label className="block">
-          <span className="text-sm font-medium text-slate-800">Effective from</span>
-          <input
-            type="datetime-local"
-            value={effectiveFrom}
-            onChange={(event) => setEffectiveFrom(event.target.value)}
-            className={inputClass}
-          />
-          <span className="mt-1 block text-xs text-slate-500">Leave empty to apply now</span>
-        </label>
-        <label className="block">
-          <span className="text-sm font-medium text-slate-800">Note</span>
-          <input value={note} maxLength={240} onChange={(event) => setNote(event.target.value)} className={inputClass} />
-        </label>
-      </div>
-      {update.error && <p className="mt-4 rounded-lg bg-red-50 px-4 py-2 text-sm text-red-700">{update.error.message}</p>}
-      {saved && (
-        <p className="mt-4 flex items-center gap-2 rounded-lg bg-emerald-50 px-4 py-2 text-sm text-emerald-800">
-          <CheckCircle2 className="h-4 w-4" aria-hidden /> {saved}
-        </p>
-      )}
-      <button
-        type="submit"
-        disabled={Boolean(valueError) || update.isPending}
-        className="mt-5 flex items-center gap-2 rounded-lg bg-bhagwa-500 px-4 py-2 text-sm font-semibold text-white hover:bg-bhagwa-600 disabled:opacity-50"
-      >
-        {update.isPending && <Loader2 className="h-4 w-4 animate-spin" aria-hidden />}
-        Save commission
-      </button>
-    </form>
-  );
-}
-
+/** Commission is set per ride type: one card each, with Edit going to that ride type. */
 export function CommissionPage() {
-  const { data, error, isPending } = useCommission();
-  const history = useCommissionHistory();
-  const cancel = useCancelCommission();
+  const { data, error, isPending } = useCommissionOverview();
 
   return (
-    <div className="mx-auto max-w-5xl space-y-5">
+    <div className="mx-auto max-w-4xl space-y-5">
       <header>
         <h1 className="text-2xl font-bold text-midnight">Commission</h1>
-        <p className="text-sm text-slate-500">Tirvona's share of each paid ride. The driver earns the rest.</p>
+        <p className="text-sm text-slate-500">
+          Manage commission rates by ride type. Tirvona keeps this share of the final fare and the driver earns the rest. A rate
+          change applies to rides finalised after it takes effect; earlier rides keep the rate they had.
+        </p>
       </header>
 
       {isPending ? (
@@ -131,75 +26,50 @@ export function CommissionPage() {
           <XCircle className="h-4 w-4" aria-hidden /> {error.message}
         </p>
       ) : (
-        <>
-          <section className="flex flex-wrap items-center gap-6 rounded-xl shadow-sm border border-slate-200 bg-white p-6">
-            <span className="flex h-14 w-14 items-center justify-center rounded-full bg-bhagwa-100 text-bhagwa-600">
-              <Percent className="h-6 w-6" aria-hidden />
-            </span>
-            <div>
-              <p className="text-xs uppercase tracking-wide text-slate-500">Current commission</p>
-              <p className="text-3xl font-bold text-midnight">{data.current.value}%</p>
-              <p className="text-sm text-slate-500">
-                {titleCase(data.current.type)} · Active since {formatDateTime(data.current.effectiveFrom)} · v
-                {data.current.version}
-              </p>
-            </div>
-            {data.scheduled.map((next) => (
-              <div key={next.id} className="flex items-center gap-2 rounded-lg bg-sky-50 px-4 py-2 text-sm text-sky-800">
-                <CalendarClock className="h-4 w-4" aria-hidden />
-                {next.value}% from {formatDateTime(next.effectiveFrom)}
-              </div>
-            ))}
-          </section>
-          <EditCommission key={data.current.id} currentValue={data.current.value} />
-        </>
-      )}
-
-      <section className="overflow-hidden rounded-xl shadow-sm border border-slate-200 bg-white">
-        <h2 className="border-b border-slate-200 px-5 py-4 text-base font-semibold text-midnight">History</h2>
-        {cancel.error && <p className="bg-red-50 px-5 py-2 text-sm text-red-700">{cancel.error.message}</p>}
-        {history.data && (
-          <table className="w-full text-left text-sm">
-            <thead className="bg-slate-50 text-xs uppercase tracking-wide text-slate-500">
-              <tr>
-                <th className="px-5 py-3 font-medium">Version</th>
-                <th className="px-5 py-3 font-medium">Rate</th>
-                <th className="px-5 py-3 font-medium">Effective from</th>
-                <th className="px-5 py-3 font-medium">Status</th>
-                <th className="px-5 py-3 font-medium">Note</th>
-                <th className="px-5 py-3" />
-              </tr>
-            </thead>
-            <tbody className="divide-y divide-slate-100">
-              {history.data.map((entry) => (
-                <tr key={entry.id}>
-                  <td className="px-5 py-3 font-mono text-xs">v{entry.version}</td>
-                  <td className="px-5 py-3 font-semibold">{entry.value}%</td>
-                  <td className="px-5 py-3 text-slate-700">{formatDateTime(entry.effectiveFrom)}</td>
-                  <td className="px-5 py-3">
-                    <span className={`rounded-full px-2.5 py-0.5 text-xs font-semibold ${phaseStyles[entry.phase]}`}>
-                      {titleCase(entry.phase)}
-                    </span>
-                  </td>
-                  <td className="px-5 py-3 text-slate-600">{entry.note ?? "—"}</td>
-                  <td className="px-5 py-3 text-right">
-                    {entry.phase === "SCHEDULED" && (
-                      <button
-                        type="button"
-                        disabled={cancel.isPending}
-                        onClick={() => cancel.mutate(entry.id)}
-                        className="text-sm font-medium text-red-600 hover:underline disabled:opacity-50"
-                      >
-                        Cancel
-                      </button>
+        <ul className="space-y-3">
+          {data.map(({ rideType, current, scheduled }) => (
+            <li key={rideType.code}>
+              <Link
+                to={`/commission/${rideType.code}`}
+                className="flex flex-wrap items-center gap-5 rounded-xl border border-slate-200 bg-white p-5 shadow-sm transition hover:border-bhagwa-500/50 hover:shadow"
+                aria-label={`Edit ${rideType.displayName} commission`}
+              >
+                <span className="flex h-12 w-12 shrink-0 items-center justify-center rounded-full bg-bhagwa-100 text-bhagwa-600">
+                  <Percent className="h-5 w-5" aria-hidden />
+                </span>
+                <div className="min-w-[10rem] flex-1">
+                  <p className="flex items-center gap-2 text-base font-semibold text-midnight">
+                    {rideType.displayName}
+                    {!rideType.isActive && <span className="text-[10px] font-medium uppercase text-slate-400">ride type off</span>}
+                  </p>
+                  <p className="text-sm text-slate-500">
+                    {current ? (
+                      <>
+                        Active since {formatDateTime(current.effectiveFrom)} · v{current.version}
+                      </>
+                    ) : (
+                      "No commission configured"
                     )}
-                  </td>
-                </tr>
-              ))}
-            </tbody>
-          </table>
-        )}
-      </section>
+                  </p>
+                  {scheduled.map((next) => (
+                    <p key={next.id} className="mt-1 inline-flex items-center gap-1.5 rounded-md bg-sky-50 px-2 py-1 text-xs text-sky-800">
+                      <CalendarClock className="h-3.5 w-3.5" aria-hidden />
+                      Scheduled: {next.value}% from {formatDateTime(next.effectiveFrom)}
+                    </p>
+                  ))}
+                </div>
+                <div className="text-right">
+                  <p className="text-xs uppercase tracking-wide text-slate-500">Current commission</p>
+                  <p className="text-3xl font-bold text-midnight">{current ? `${current.value}%` : "—"}</p>
+                </div>
+                <span className="flex items-center gap-1 text-sm font-semibold text-bhagwa-600">
+                  Edit <ChevronRight className="h-4 w-4" aria-hidden />
+                </span>
+              </Link>
+            </li>
+          ))}
+        </ul>
+      )}
     </div>
   );
 }

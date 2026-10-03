@@ -303,7 +303,7 @@ export function PaymentDetailPage() {
             <dl className="space-y-3">
               <Field label="Gross fare" value={formatMoney(payment.earning.grossFare)} />
               <Field
-                label={`Tirvona commission (${payment.earning.commissionRate}%)`}
+                label={`Tirvona commission (${payment.earning.commissionRate}% · ${payment.earning.rideType} v${payment.earning.commissionVersion})`}
                 value={formatMoney(payment.earning.commissionAmount)}
               />
               <Field label="Driver earning" value={formatMoney(payment.earning.netEarning)} />

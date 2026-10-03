@@ -92,6 +92,8 @@ export interface Earning {
   grossFare: number;
   commissionType: "PERCENTAGE";
   commissionRate: number;
+  /** The ride type's commission version the line was priced with. */
+  commissionVersion?: number;
   commissionAmount: number;
   netEarning: number;
   paymentMode: "ONLINE" | "CASH";

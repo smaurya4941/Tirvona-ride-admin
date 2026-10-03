@@ -3,7 +3,7 @@ import { AlertTriangle, ArrowLeft, CheckCircle2, ExternalLink, Loader2, Phone, X
 import { Link, useParams } from "react-router-dom";
 import { Field, Section, timeAgo } from "@/components/DetailUi";
 import { formatDateTime, titleCase } from "@/lib/format";
-import { OPEN_SOS_STATUSES, mapsLink, useSos, useUpdateSos } from "../api/sos";
+import { OPEN_SOS_STATUSES, mapsLink, useNotifyContacts, useSos, useUpdateSos } from "../api/sos";
 import type { SosDetail, SosStatus } from "../api/sos";
 import { LOCATION_SOURCE_LABEL, SosStatusBadge } from "../components/SosBadges";
 
@@ -111,6 +111,7 @@ function PersonCard({ title, person, extra }: { title: string; person: { name: s
 export function SosDetailPage() {
   const { id = "" } = useParams();
   const { data: sos, error, isPending } = useSos(id);
+  const notifyContacts = useNotifyContacts();
 
   if (isPending)
     return (
@@ -259,9 +260,62 @@ export function SosDetailPage() {
                 ))}
               </ul>
             )}
-            <p className="mt-4 text-xs text-slate-500">
-              Contacts are not messaged automatically (no SMS/WhatsApp integration yet) — call them if needed.
-            </p>
+            {sos.emergencyContacts.length > 0 && (
+              <div className="mt-4 space-y-3 border-t border-slate-100 pt-4">
+                <div className="flex flex-wrap items-center justify-between gap-2">
+                  <p className="text-sm font-semibold text-slate-900">
+                    WhatsApp alert{" "}
+                    <span
+                      className={`ml-1 rounded-full px-2 py-0.5 text-xs font-semibold ${
+                        sos.contactsNotification === "SENT"
+                          ? "bg-emerald-100 text-emerald-800"
+                          : sos.contactsNotification === "FAILED"
+                            ? "bg-red-100 text-red-700"
+                            : "bg-slate-100 text-slate-600"
+                      }`}
+                    >
+                      {sos.contactsNotification === "SENT" ? "Sent" : sos.contactsNotification === "FAILED" ? "Not delivered" : "Not sent"}
+                    </span>
+                  </p>
+                  {OPEN_SOS_STATUSES.includes(sos.status) && (
+                    <button
+                      type="button"
+                      disabled={notifyContacts.isPending}
+                      onClick={() => notifyContacts.mutate(sos.id)}
+                      className="inline-flex items-center gap-1 rounded-lg border border-slate-300 bg-white px-3 py-1.5 text-xs font-semibold text-slate-700 hover:bg-slate-50 disabled:opacity-50"
+                    >
+                      {notifyContacts.isPending && <Loader2 className="h-3 w-3 animate-spin" aria-hidden />}
+                      Send again to contacts not reached
+                    </button>
+                  )}
+                </div>
+                {notifyContacts.error && <p className="text-xs text-red-600">{notifyContacts.error.message}</p>}
+                {sos.contactAlerts.length === 0 ? (
+                  <p className="text-xs text-slate-500">Nothing has been sent to the contacts yet. Call them if the alert does not go out.</p>
+                ) : (
+                  <ul className="space-y-1.5 text-xs">
+                    {sos.contactAlerts.map((entry, index) => (
+                      <li key={`${entry.phone}-${entry.at}-${index}`} className="flex items-start gap-2">
+                        {entry.status === "SENT" ? (
+                          <CheckCircle2 className="mt-0.5 h-3.5 w-3.5 shrink-0 text-emerald-600" aria-hidden />
+                        ) : (
+                          <XCircle className="mt-0.5 h-3.5 w-3.5 shrink-0 text-red-600" aria-hidden />
+                        )}
+                        <span className="text-slate-700">
+                          <span className="font-medium">{entry.name}</span> · {entry.kind === "ALERT" ? "alert with location" : "location update"} ·{" "}
+                          {formatDateTime(entry.at)}
+                          {entry.status === "FAILED" && <span className="block text-red-600">{entry.failure ?? "Could not be delivered"}. Call them.</span>}
+                        </span>
+                      </li>
+                    ))}
+                  </ul>
+                )}
+                <p className="text-xs text-slate-500">
+                  Each contact gets a map pin and a live-tracking link
+                  {sos.trackingActive ? " (active until this incident is closed)" : sos.contactAlerts.length > 0 ? " (ended)" : ""}. WhatsApp can fail for numbers that are not on WhatsApp, so call the contacts marked above.
+                </p>
+              </div>
+            )}
           </Section>
 
           <Section title="Handling">

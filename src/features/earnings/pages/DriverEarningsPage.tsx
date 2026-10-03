@@ -307,7 +307,9 @@ export function DriverEarningsPage() {
                     <td className="px-5 py-3 text-right">{formatMoney(earning.grossFare)}</td>
                     <td className="px-5 py-3 text-right text-slate-600">
                       {formatMoney(earning.commissionAmount)}
-                      <p className="text-xs text-slate-400">{earning.commissionRate}%</p>
+                      <p className="text-xs text-slate-400">
+                        {earning.commissionRate}%{earning.commissionVersion ? ` · v${earning.commissionVersion}` : ""}
+                      </p>
                     </td>
                     <td className="px-5 py-3 text-right font-semibold">{formatMoney(earning.netEarning)}</td>
                     <td className="px-5 py-3">

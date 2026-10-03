@@ -15,6 +15,7 @@ import { DriverEarningsPage } from "@/features/earnings/pages/DriverEarningsPage
 import { EarningsPage } from "@/features/earnings/pages/EarningsPage";
 import { NotificationsPage } from "@/features/notifications/pages/NotificationsPage";
 import { CommissionPage } from "@/features/payments/pages/CommissionPage";
+import { CommissionRideTypePage } from "@/features/payments/pages/CommissionRideTypePage";
 import { PaymentDetailPage } from "@/features/payments/pages/PaymentDetailPage";
 import { PaymentsPage } from "@/features/payments/pages/PaymentsPage";
 import { ReconciliationPage } from "@/features/payments/pages/ReconciliationPage";
@@ -31,6 +32,7 @@ import { CancellationsPage } from "@/features/platform/pages/CancellationsPage";
 import { CustomerDetailPage, CustomersPage } from "@/features/platform/pages/CustomersPage";
 import { PromoDetailPage, PromotionsPage } from "@/features/platform/pages/PromotionsPage";
 import { ReportsPage } from "@/features/platform/pages/ReportsPage";
+import { RideLimitsPage } from "@/features/ride-config/pages/RideLimitsPage";
 import { RideTypesPage } from "@/features/platform/pages/RideTypesPage";
 import { VehiclesPage } from "@/features/platform/pages/VehiclesPage";
 import { ZoneEditorPage, ZonesPage } from "@/features/platform/pages/ZonesPage";
@@ -62,6 +64,7 @@ export const router = createBrowserRouter([
       { path: "payments/reconciliation", element: <ReconciliationPage /> },
       { path: "payments/:id", element: <PaymentDetailPage /> },
       { path: "commission", element: <CommissionPage /> },
+      { path: "commission/:rideType", element: <CommissionRideTypePage /> },
       { path: "earnings", element: <EarningsPage /> },
       { path: "earnings/:driverId", element: <DriverEarningsPage /> },
       { path: "safety", element: <SafetyPage /> },
@@ -74,6 +77,7 @@ export const router = createBrowserRouter([
       { path: "customers/:id", element: <CustomerDetailPage /> },
       { path: "vehicles", element: <VehiclesPage /> },
       { path: "ride-types", element: <RideTypesPage /> },
+      { path: "ride-limits", element: <RideLimitsPage /> },
       { path: "zones", element: <ZonesPage /> },
       { path: "zones/new", element: <ZoneEditorPage /> },
       { path: "zones/:id", element: <ZoneEditorPage /> },
