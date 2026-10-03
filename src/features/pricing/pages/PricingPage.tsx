@@ -5,6 +5,7 @@ import type { LucideIcon } from "lucide-react";
 import { formatDateTime, formatMoney } from "@/lib/format";
 import type { RideTypeCode } from "@/features/rides/api/rides";
 import { Link } from "react-router-dom";
+import { PricingTabs } from "../components/PricingTabs";
 import { previewFare, usePricing, useUpdatePricing } from "../api/pricing";
 import type { PricingRates, PricingRow } from "../api/pricing";
 
@@ -222,6 +223,7 @@ export function PricingPage() {
         <h1 className="text-2xl font-bold text-midnight">Pricing</h1>
         <p className="text-sm text-slate-500">Tariffs per ride type. Fares are always calculated by the server.</p>
       </header>
+      <PricingTabs />
 
       {isPending ? (
         <p className="flex items-center gap-2 text-sm text-slate-500">

@@ -19,6 +19,7 @@ import { PaymentDetailPage } from "@/features/payments/pages/PaymentDetailPage";
 import { PaymentsPage } from "@/features/payments/pages/PaymentsPage";
 import { ReconciliationPage } from "@/features/payments/pages/ReconciliationPage";
 import { RefundsPage } from "@/features/payments/pages/RefundsPage";
+import { PeakHoursPage } from "@/features/pricing/pages/PeakHoursPage";
 import { PricingPage } from "@/features/pricing/pages/PricingPage";
 import { RideDetailPage } from "@/features/rides/pages/RideDetailPage";
 import { RidesPage } from "@/features/rides/pages/RidesPage";
@@ -48,6 +49,7 @@ export const router = createBrowserRouter([
     children: [
       { index: true, element: <DashboardPage /> },
       { path: "live-map", element: <LiveMapPage /> },
+      { path: "pricing/peak-hours", element: <PeakHoursPage /> },
       { path: "drivers", element: <DriversPage /> },
       { path: "drivers/:id", element: <DriverDetailPage /> },
       { path: "driver-updates", element: <DriverChangesPage /> },

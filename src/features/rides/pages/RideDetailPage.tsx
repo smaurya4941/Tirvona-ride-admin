@@ -189,6 +189,12 @@ export function RideDetailPage() {
             label={`Distance (${formatMoney(ride.fare.perKmRate)}/km)`}
             value={formatMoney(ride.fare.distanceCharge)}
           />
+          {ride.fare.peak && (
+            <p className="-mt-1 mb-2 rounded-md bg-bhagwa-50 px-3 py-2 text-xs text-bhagwa-600">
+              Peak pricing: {ride.fare.peak.name} (+{ride.fare.peak.hikePercent}% on per km,{" "}
+              {formatMoney(ride.fare.basePerKmRate ?? ride.fare.perKmRate)} → {formatMoney(ride.fare.perKmRate)}/km), frozen when the ride was booked.
+            </p>
+          )}
           <FareRow
             label={`Time (${formatMoney(ride.fare.perMinuteRate)}/min)`}
             value={formatMoney(ride.fare.timeCharge)}

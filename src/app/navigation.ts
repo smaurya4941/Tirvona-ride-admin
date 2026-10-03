@@ -11,6 +11,7 @@ import {
   LifeBuoy,
   Map as MapIcon,
   Radar,
+  Zap,
   MapPinned,
   Megaphone,
   MapPin,
@@ -59,6 +60,7 @@ export const navigation: NavSection[] = [
     items: [
       { label: "Ride types", path: "/ride-types", icon: Tags },
       { label: "Pricing", path: "/pricing", icon: Receipt },
+      { label: "Peak hours", path: "/pricing/peak-hours", icon: Zap },
       { label: "Zones", path: "/zones", icon: MapIcon },
       { label: "Popular places", path: "/popular-places", icon: MapPin },
       { label: "Branding", path: "/branding", icon: Palette },

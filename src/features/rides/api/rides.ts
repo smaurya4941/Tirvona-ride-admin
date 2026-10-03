@@ -40,6 +40,10 @@ export interface RideFare {
   currency: string;
   baseFare: number;
   perKmRate: number;
+  /** The permanent per-km rate; `perKmRate` is higher while a peak applied to this ride. */
+  basePerKmRate?: number;
+  /** The peak-hour slot that raised this ride's per-km rate, frozen at booking. */
+  peak?: { name: string; hikePercent: number; startTime: string; endTime: string; surcharge: number };
   perMinuteRate: number;
   minimumFare: number;
   distanceCharge: number;
