@@ -10,6 +10,7 @@ import { DriverChangeDetailPage } from "@/features/driver-changes/pages/DriverCh
 import { DriverChangesPage } from "@/features/driver-changes/pages/DriverChangesPage";
 import { DriverDetailPage } from "@/features/drivers/pages/DriverDetailPage";
 import { DriversPage } from "@/features/drivers/pages/DriversPage";
+import { LiveMapPage } from "@/features/live/pages/LiveMapPage";
 import { DriverEarningsPage } from "@/features/earnings/pages/DriverEarningsPage";
 import { EarningsPage } from "@/features/earnings/pages/EarningsPage";
 import { NotificationsPage } from "@/features/notifications/pages/NotificationsPage";
@@ -46,6 +47,7 @@ export const router = createBrowserRouter([
     ),
     children: [
       { index: true, element: <DashboardPage /> },
+      { path: "live-map", element: <LiveMapPage /> },
       { path: "drivers", element: <DriversPage /> },
       { path: "drivers/:id", element: <DriverDetailPage /> },
       { path: "driver-updates", element: <DriverChangesPage /> },

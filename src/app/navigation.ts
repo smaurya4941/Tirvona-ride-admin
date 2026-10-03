@@ -10,6 +10,7 @@ import {
   LayoutDashboard,
   LifeBuoy,
   Map as MapIcon,
+  Radar,
   MapPinned,
   Megaphone,
   MapPin,
@@ -45,6 +46,7 @@ export const navigation: NavSection[] = [
     title: "Operations",
     items: [
       { label: "Rides", path: "/rides", icon: MapPinned },
+      { label: "Live map", path: "/live-map", icon: Radar },
       { label: "Drivers & KYC", path: "/drivers", icon: Car },
       { label: "Driver updates", path: "/driver-updates", icon: FileCheck2 },
       { label: "Customers", path: "/customers", icon: Users },
