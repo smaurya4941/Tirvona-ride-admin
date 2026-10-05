@@ -21,6 +21,8 @@ export interface DriverSummary {
   rejectionReason?: string;
   isOnline?: boolean;
   isAvailable?: boolean;
+  /** May be offered circuit rides. */
+  circuitEligible?: boolean;
   suspensionReason?: string;
   suspendedAt?: string;
   createdAt?: string;

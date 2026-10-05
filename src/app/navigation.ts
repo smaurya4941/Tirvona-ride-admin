@@ -1,5 +1,9 @@
 import {
   Activity,
+  Route,
+  Signpost,
+  Navigation,
+  PieChart,
   Ban,
   Banknote,
   BarChart3,
@@ -54,6 +58,15 @@ export const navigation: NavSection[] = [
       { label: "Customers", path: "/customers", icon: Users },
       { label: "Vehicles", path: "/vehicles", icon: Truck },
       { label: "Cancellations", path: "/cancellations", icon: Ban },
+    ],
+  },
+  {
+    title: "Circuits",
+    items: [
+      { label: "Circuit packages", path: "/circuits/packages", icon: Route },
+      { label: "Circuit bookings", path: "/circuits/bookings", icon: Signpost },
+      { label: "Live circuits", path: "/circuits/live", icon: Navigation },
+      { label: "Circuit reports", path: "/circuits/reports", icon: PieChart },
     ],
   },
   {

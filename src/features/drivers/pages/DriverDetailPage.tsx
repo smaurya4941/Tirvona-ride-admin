@@ -14,6 +14,7 @@ import {
 import type { DriverDocument } from "../api/drivers";
 import { useDriverChanges } from "@/features/driver-changes/api/driverChanges";
 import { DriverLiveSection } from "@/features/live/components/DriverLiveSection";
+import { CircuitEligibilityToggle } from "@/features/circuits/components/CircuitEligibilityToggle";
 import { DocumentViewer } from "../components/DocumentViewer";
 import { DriverStatusBadge, statusLabel } from "../components/DriverStatusBadge";
 import { RejectDriverDialog } from "../components/RejectDriverDialog";
@@ -198,6 +199,8 @@ export function DriverDetailPage() {
         <Link className="font-semibold text-bhagwa-600 hover:underline" to={`/driver-updates?status=APPROVED&driverId=${driver.id}`}>Update history</Link>
         <Link className="font-semibold text-bhagwa-600 hover:underline" to={`/audit-log?targetType=DRIVER&targetId=${driver.id}`}>Admin action history</Link>
       </p>
+
+      {driver.driverStatus === "APPROVED" && <CircuitEligibilityToggle driverId={driver.id} eligible={driver.circuitEligible !== false} />}
 
       {driver.driverStatus === "APPROVED" && (
         <Section title="Live location">

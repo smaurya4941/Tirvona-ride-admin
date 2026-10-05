@@ -5,6 +5,12 @@ import { ComplaintDetailPage } from "@/features/complaints/pages/ComplaintDetail
 import { BrandingPage } from "@/features/branding/pages/BrandingPage";
 import { PopularPlacesPage } from "@/features/places/pages/PopularPlacesPage";
 import { ComplaintsPage } from "@/features/complaints/pages/ComplaintsPage";
+import { CircuitBookingDetailPage } from "@/features/circuits/pages/CircuitBookingDetailPage";
+import { CircuitBookingsPage } from "@/features/circuits/pages/CircuitBookingsPage";
+import { CircuitPackageEditorPage } from "@/features/circuits/pages/CircuitPackageEditorPage";
+import { CircuitPackagesPage } from "@/features/circuits/pages/CircuitPackagesPage";
+import { CircuitReportsPage } from "@/features/circuits/pages/CircuitReportsPage";
+import { LiveCircuitsPage } from "@/features/circuits/pages/LiveCircuitsPage";
 import { DashboardPage } from "@/features/dashboard/pages/DashboardPage";
 import { DriverChangeDetailPage } from "@/features/driver-changes/pages/DriverChangeDetailPage";
 import { DriverChangesPage } from "@/features/driver-changes/pages/DriverChangesPage";
@@ -59,6 +65,14 @@ export const router = createBrowserRouter([
       { path: "rides", element: <RidesPage /> },
       { path: "rides/:id", element: <RideDetailPage /> },
       { path: "pricing", element: <PricingPage /> },
+      // Tirvona Circuit
+      { path: "circuits/packages", element: <CircuitPackagesPage /> },
+      { path: "circuits/packages/new", element: <CircuitPackageEditorPage /> },
+      { path: "circuits/packages/:id", element: <CircuitPackageEditorPage /> },
+      { path: "circuits/bookings", element: <CircuitBookingsPage /> },
+      { path: "circuits/bookings/:id", element: <CircuitBookingDetailPage /> },
+      { path: "circuits/live", element: <LiveCircuitsPage /> },
+      { path: "circuits/reports", element: <CircuitReportsPage /> },
       { path: "payments", element: <PaymentsPage /> },
       { path: "payments/refunds", element: <RefundsPage /> },
       { path: "payments/reconciliation", element: <ReconciliationPage /> },
