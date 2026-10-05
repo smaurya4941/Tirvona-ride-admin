@@ -155,6 +155,40 @@ export const useUploadCircuitCover = () =>
 export const useRemoveCircuitCover = () =>
   useApiMutation((id: string) => apiClient.delete<ApiSuccess<CircuitPackage>>(`/admin/circuit-packages/${id}/cover`), [packageKey]);
 
+export interface CoverRule {
+  maxBytes: number;
+  minWidth: number;
+  minHeight: number;
+  minAspect: number;
+  maxAspect: number;
+  hint: string;
+}
+
+/** The server's cover-image rule (it re-checks the uploaded bytes itself). */
+export const useCircuitCoverRule = () => useApi<CoverRule>([...packageKey, "cover-rule"], "/admin/circuit-packages/cover-rule");
+
+const megabytes = (bytes: number) => `${(bytes / (1024 * 1024)).toFixed(bytes % (1024 * 1024) === 0 ? 0 : 1)} MB`;
+
+/** Instant feedback before uploading, with the server's own rule. */
+export async function checkCoverImage(file: File, rule: CoverRule): Promise<string | null> {
+  if (!["image/png", "image/jpeg", "image/webp"].includes(file.type)) return "Cover must be a PNG, JPEG or WEBP image";
+  if (file.size > rule.maxBytes) return `Cover must be at most ${megabytes(rule.maxBytes)} (this one is ${megabytes(file.size)})`;
+  let width = 0;
+  let height = 0;
+  try {
+    const bitmap = await createImageBitmap(file);
+    ({ width, height } = bitmap);
+    bitmap.close();
+  } catch {
+    return "This file could not be read as an image";
+  }
+  if (width < rule.minWidth || height < rule.minHeight)
+    return `Cover must be at least ${rule.minWidth} × ${rule.minHeight} px (this one is ${width} × ${height})`;
+  const aspect = height / width;
+  if (aspect < rule.minAspect || aspect > rule.maxAspect) return "Use a landscape image (about 16 : 10)";
+  return null;
+}
+
 export const useRoutePreview = () =>
   useApiMutation(
     ({ id, ...body }: { id: string; stops?: Array<{ placeId: string }>; includedDistanceKm?: number }) =>
