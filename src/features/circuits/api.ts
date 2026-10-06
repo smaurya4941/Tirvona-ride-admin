@@ -33,12 +33,18 @@ export interface PackageStop {
   longitude: number;
 }
 
+/** What a package includes, the same for every vehicle. */
 export interface PackagePricing {
-  basePrice: number;
   includedDistanceKm: number;
   includedDurationHours: number;
   includedDistanceMeters: number;
   includedDurationSeconds: number;
+}
+
+/** What one allowed vehicle costs on a package. */
+export interface VehiclePrice {
+  rideType: string;
+  basePrice: number;
   extraDistanceRatePerKm: number;
   extraDurationRatePerHour: number;
 }
@@ -61,6 +67,8 @@ export interface CircuitPackage {
   stops: PackageStop[];
   pricing?: PackagePricing;
   rideTypes: string[];
+  /** One entry per priced vehicle, in `rideTypes` order. */
+  vehiclePricing: VehiclePrice[];
   maxPassengers: number;
   availability: PackageAvailability;
   cancellationPolicy?: string;
@@ -79,14 +87,10 @@ export interface PackageInput {
   description?: string;
   city?: string;
   stops?: Array<{ placeId: string; name?: string }>;
-  pricing?: {
-    basePrice: number;
-    includedDistanceKm: number;
-    includedDurationHours: number;
-    extraDistanceRatePerKm: number;
-    extraDurationRatePerHour: number;
-  };
+  pricing?: { includedDistanceKm: number; includedDurationHours: number };
   rideTypes?: string[];
+  /** Replaces every vehicle price; each ride type must be in `rideTypes`. */
+  vehiclePricing?: VehiclePrice[];
   maxPassengers?: number;
   availability?: { days?: number[]; opensAt?: string; closesAt?: string; validFrom?: string | null; validUntil?: string | null };
   cancellationPolicy?: string;

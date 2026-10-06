@@ -40,11 +40,12 @@ import {
   useUpdateCircuitPackage,
   useUploadCircuitCover,
 } from "../api";
-import type { CircuitPackage, PackageInput, PackageStatus, PlaceSuggestion, RoutePreview } from "../api";
+import type { CircuitPackage, PackageInput, PackageStatus, PlaceSuggestion, RoutePreview, VehiclePrice } from "../api";
 import { PACKAGE_STATUS_TONE } from "./CircuitPackagesPage";
 
 
-const STEPS = ["Basics", "Stops", "Route preview", "Pricing", "Vehicles & passengers", "Availability"] as const;
+// Vehicles come before Pricing: each allowed vehicle gets its own price.
+const STEPS = ["Basics", "Stops", "Route preview", "Vehicles & passengers", "Pricing", "Availability"] as const;
 type Step = (typeof STEPS)[number];
 
 interface StopDraft {
@@ -55,18 +56,26 @@ interface StopDraft {
   longitude?: number;
 }
 
+/** One vehicle's price as typed; kept for unticked vehicles too, so ticking one again restores it. */
+interface PriceDraft {
+  basePrice: string;
+  extraDistanceRatePerKm: string;
+  extraDurationRatePerHour: string;
+}
+
+const EMPTY_PRICE: PriceDraft = { basePrice: "", extraDistanceRatePerKm: "", extraDurationRatePerHour: "" };
+
 interface FormState {
   name: string;
   description: string;
   city: string;
   cancellationPolicy: string;
   stops: StopDraft[];
-  basePrice: string;
   includedDistanceKm: string;
   includedDurationHours: string;
-  extraDistanceRatePerKm: string;
-  extraDurationRatePerHour: string;
   rideTypes: string[];
+  /** By ride type code. */
+  prices: Record<string, PriceDraft>;
   maxPassengers: string;
   days: number[];
   opensAt: string;
@@ -84,12 +93,10 @@ const EMPTY: FormState = {
   city: "",
   cancellationPolicy: "Free cancellation before a driver is assigned. After that, a cancellation fee may apply. A started circuit cannot be cancelled.",
   stops: [],
-  basePrice: "",
   includedDistanceKm: "",
   includedDurationHours: "",
-  extraDistanceRatePerKm: "",
-  extraDurationRatePerHour: "",
   rideTypes: [],
+  prices: {},
   maxPassengers: "4",
   days: [0, 1, 2, 3, 4, 5, 6],
   opensAt: "06:00",
@@ -108,12 +115,15 @@ function fromPackage(pkg: CircuitPackage): FormState {
     city: pkg.city,
     cancellationPolicy: pkg.cancellationPolicy ?? "",
     stops: pkg.stops.map((stop) => ({ placeId: stop.placeId, name: stop.name, address: stop.address, latitude: stop.latitude, longitude: stop.longitude })),
-    basePrice: pkg.pricing ? String(pkg.pricing.basePrice) : "",
     includedDistanceKm: pkg.pricing ? String(pkg.pricing.includedDistanceKm) : "",
     includedDurationHours: pkg.pricing ? String(pkg.pricing.includedDurationHours) : "",
-    extraDistanceRatePerKm: pkg.pricing ? String(pkg.pricing.extraDistanceRatePerKm) : "",
-    extraDurationRatePerHour: pkg.pricing ? String(pkg.pricing.extraDurationRatePerHour) : "",
     rideTypes: pkg.rideTypes,
+    prices: Object.fromEntries(
+      pkg.vehiclePricing.map((price) => [
+        price.rideType,
+        { basePrice: String(price.basePrice), extraDistanceRatePerKm: String(price.extraDistanceRatePerKm), extraDurationRatePerHour: String(price.extraDurationRatePerHour) },
+      ]),
+    ),
     maxPassengers: String(pkg.maxPassengers),
     days: pkg.availability.days,
     opensAt: pkg.availability.opensAt,
@@ -139,13 +149,24 @@ function toInput(form: FormState, original?: CircuitPackage): { input?: PackageI
     rideTypes: form.rideTypes,
   };
 
-  const priceFields = [form.basePrice, form.includedDistanceKm, form.includedDurationHours, form.extraDistanceRatePerKm, form.extraDurationRatePerHour];
-  if (priceFields.some((value) => value.trim() !== "")) {
-    const numbers = priceFields.map(Number);
-    if (priceFields.some((value) => value.trim() === "") || numbers.some((value) => !Number.isFinite(value) || value < 0))
-      return { error: "Pricing: fill in all five numbers (0 or more)" };
-    const [basePrice, includedDistanceKm, includedDurationHours, extraDistanceRatePerKm, extraDurationRatePerHour] = numbers;
-    input.pricing = { basePrice, includedDistanceKm, includedDurationHours, extraDistanceRatePerKm, extraDurationRatePerHour };
+  const included = [form.includedDistanceKm, form.includedDurationHours];
+  if (included.some((value) => value.trim() !== "")) {
+    const [includedDistanceKm, includedDurationHours] = included.map(Number);
+    if (included.some((value) => value.trim() === "") || ![includedDistanceKm, includedDurationHours].every((value) => Number.isFinite(value) && value >= 0))
+      return { error: "Pricing: fill in both the included distance and the included duration (0 or more)" };
+    input.pricing = { includedDistanceKm, includedDurationHours };
+  }
+
+  // Only allowed vehicles are priced; a vehicle left blank stays unpriced (fine for a draft, not for publishing).
+  input.vehiclePricing = [];
+  for (const rideType of form.rideTypes) {
+    const draft = form.prices[rideType] ?? EMPTY_PRICE;
+    const fields = [draft.basePrice, draft.extraDistanceRatePerKm, draft.extraDurationRatePerHour];
+    if (fields.every((value) => value.trim() === "")) continue;
+    const [basePrice, extraDistanceRatePerKm, extraDurationRatePerHour] = fields.map(Number);
+    if (fields.some((value) => value.trim() === "") || ![basePrice, extraDistanceRatePerKm, extraDurationRatePerHour].every((value) => Number.isFinite(value) && value >= 0))
+      return { error: `Pricing for ${titleCase(rideType)}: fill in the package price and both extra rates (0 or more)` };
+    input.vehiclePricing.push({ rideType, basePrice, extraDistanceRatePerKm, extraDurationRatePerHour });
   }
 
   const passengers = Number(form.maxPassengers);
@@ -472,8 +493,12 @@ export function CircuitPackageEditorPage() {
     return () => window.removeEventListener("beforeunload", warn);
   }, [dirty]);
 
+  // In the order the admin ticked them, which is the order the server keeps prices in.
   const selectedTypes = useMemo(
-    () => (rideTypes.data ?? []).filter((row) => form.rideTypes.includes(row.rideType.code)).map((row) => row.rideType),
+    () =>
+      form.rideTypes
+        .map((code) => (rideTypes.data ?? []).find((row) => row.rideType.code === code)?.rideType)
+        .filter((type): type is NonNullable<typeof type> => Boolean(type)),
     [rideTypes.data, form.rideTypes],
   );
 
@@ -657,32 +682,33 @@ export function CircuitPackageEditorPage() {
             {step === "Route preview" && <RouteStep id={current?.id} form={form} />}
 
             {step === "Pricing" && (
-              <div className="space-y-4">
-                <div className="grid gap-4 md:grid-cols-3">
-                  <FormField label="Package price (₹)">
-                    <input inputMode="decimal" value={form.basePrice} onChange={(event) => set("basePrice", event.target.value)} className={inputClass} placeholder="600" />
-                  </FormField>
-                  <FormField label="Included distance (km)">
-                    <input inputMode="decimal" value={form.includedDistanceKm} onChange={(event) => set("includedDistanceKm", event.target.value)} className={inputClass} placeholder="30" />
-                  </FormField>
-                  <FormField label="Included duration (hours)">
-                    <input inputMode="decimal" value={form.includedDurationHours} onChange={(event) => set("includedDurationHours", event.target.value)} className={inputClass} placeholder="5" />
-                  </FormField>
-                  <FormField label="Extra distance (₹ / km)" hint="Charged per started km">
-                    <input inputMode="decimal" value={form.extraDistanceRatePerKm} onChange={(event) => set("extraDistanceRatePerKm", event.target.value)} className={inputClass} placeholder="15" />
-                  </FormField>
-                  <FormField label="Extra duration (₹ / hour)" hint="Charged per started 15 minutes">
-                    <input inputMode="decimal" value={form.extraDurationRatePerHour} onChange={(event) => set("extraDurationRatePerHour", event.target.value)} className={inputClass} placeholder="50" />
-                  </FormField>
+              <div className="space-y-5">
+                <div>
+                  <p className="text-sm font-medium text-slate-800">Included in every booking</p>
+                  <p className="mb-3 text-xs text-slate-500">The same for every vehicle: the route decides how far and how long a circuit runs.</p>
+                  <div className="grid gap-4 md:grid-cols-2">
+                    <FormField label="Included distance (km)">
+                      <input inputMode="decimal" value={form.includedDistanceKm} onChange={(event) => set("includedDistanceKm", event.target.value)} className={inputClass} placeholder="30" />
+                    </FormField>
+                    <FormField label="Included duration (hours)">
+                      <input inputMode="decimal" value={form.includedDurationHours} onChange={(event) => set("includedDurationHours", event.target.value)} className={inputClass} placeholder="5" />
+                    </FormField>
+                  </div>
                 </div>
-                <PricingExample form={form} />
+                <VehiclePricingEditor
+                  form={form}
+                  vehicles={selectedTypes}
+                  onChange={(rideType, price) => set("prices", { ...form.prices, [rideType]: price })}
+                  onCopyToAll={(price) => set("prices", { ...form.prices, ...Object.fromEntries(form.rideTypes.map((code) => [code, { ...price }])) })}
+                  onAddVehicles={() => void goTo("Vehicles & passengers")}
+                />
                 {live && <Notice tone="warning">Price changes apply to new bookings only. You will be asked for a reason, which is kept in the audit log.</Notice>}
               </div>
             )}
 
             {step === "Vehicles & passengers" && (
               <div className="space-y-4">
-                <FormField label="Allowed vehicles" hint="Ride types customers can book this circuit with">
+                <FormField label="Allowed vehicles" hint="Ride types customers can book this circuit with. Each gets its own price in the next step.">
                   <div className="mt-1 grid gap-2 sm:grid-cols-2">
                     {rideTypes.data?.map(({ rideType }) => (
                       <label key={rideType.code} className="flex items-center gap-3 rounded-lg border border-slate-200 px-3 py-2">
@@ -879,23 +905,113 @@ export function CircuitPackageEditorPage() {
   );
 }
 
-function PricingExample({ form }: { form: FormState }) {
-  const price = Number(form.basePrice);
+type SelectedRideType = { code: string; displayName: string; seatCapacity: number; isActive: boolean };
+
+/** One card per allowed vehicle: its package price and extra rates, with a worked example. */
+function VehiclePricingEditor({
+  form,
+  vehicles,
+  onChange,
+  onCopyToAll,
+  onAddVehicles,
+}: {
+  form: FormState;
+  vehicles: SelectedRideType[];
+  onChange: (rideType: string, price: PriceDraft) => void;
+  onCopyToAll: (price: PriceDraft) => void;
+  onAddVehicles: () => void;
+}) {
+  if (vehicles.length === 0)
+    return (
+      <Notice tone="warning">
+        Choose the allowed vehicles first; each one gets its own price here.{" "}
+        <button type="button" onClick={onAddVehicles} className="font-semibold underline">
+          Choose vehicles
+        </button>
+      </Notice>
+    );
+  return (
+    <div>
+      <p className="text-sm font-medium text-slate-800">Price per vehicle</p>
+      <p className="mb-3 text-xs text-slate-500">
+        What a customer pays for this circuit with each vehicle. Extra distance is charged per started km, extra time per started 15 minutes.
+      </p>
+      <div className="space-y-3">
+        {vehicles.map((vehicle, index) => {
+          const price = form.prices[vehicle.code] ?? EMPTY_PRICE;
+          const field = (key: keyof PriceDraft) => (event: ChangeEvent<HTMLInputElement>) => onChange(vehicle.code, { ...price, [key]: event.target.value });
+          const missing = price.basePrice.trim() === "";
+          return (
+            <div key={vehicle.code} className={`rounded-lg border p-4 ${missing ? "border-amber-300 bg-amber-50/40" : "border-slate-200"}`}>
+              <div className="mb-3 flex flex-wrap items-center justify-between gap-2">
+                <p className="text-sm font-semibold text-slate-900">
+                  {vehicle.displayName}
+                  <span className="ml-2 text-xs font-normal text-slate-500">
+                    {vehicle.seatCapacity} seats{vehicle.isActive ? "" : " · switched off, not offered to customers"}
+                  </span>
+                </p>
+                {index === 0 && vehicles.length > 1 && (
+                  <button
+                    type="button"
+                    onClick={() => onCopyToAll(price)}
+                    disabled={missing}
+                    className="text-xs font-semibold text-bhagwa-600 hover:underline disabled:opacity-40"
+                  >
+                    Copy to all vehicles
+                  </button>
+                )}
+              </div>
+              <div className="grid gap-3 sm:grid-cols-3">
+                <FormField label="Package price (₹)">
+                  <input inputMode="decimal" value={price.basePrice} onChange={field("basePrice")} className={inputClass} placeholder="600" aria-label={`${vehicle.displayName} package price`} />
+                </FormField>
+                <FormField label="Extra distance (₹ / km)">
+                  <input
+                    inputMode="decimal"
+                    value={price.extraDistanceRatePerKm}
+                    onChange={field("extraDistanceRatePerKm")}
+                    className={inputClass}
+                    placeholder="15"
+                    aria-label={`${vehicle.displayName} extra distance rate`}
+                  />
+                </FormField>
+                <FormField label="Extra duration (₹ / hour)">
+                  <input
+                    inputMode="decimal"
+                    value={price.extraDurationRatePerHour}
+                    onChange={field("extraDurationRatePerHour")}
+                    className={inputClass}
+                    placeholder="50"
+                    aria-label={`${vehicle.displayName} extra duration rate`}
+                  />
+                </FormField>
+              </div>
+              {missing ? (
+                <p className="mt-2 text-xs text-amber-700">No price yet. The package cannot be published until every allowed vehicle has one.</p>
+              ) : (
+                <PricingExample form={form} price={price} />
+              )}
+            </div>
+          );
+        })}
+      </div>
+    </div>
+  );
+}
+
+function PricingExample({ form, price: draft }: { form: FormState; price: PriceDraft }) {
+  const price = Number(draft.basePrice);
   const km = Number(form.includedDistanceKm);
   const hours = Number(form.includedDurationHours);
-  const perKm = Number(form.extraDistanceRatePerKm);
-  const perHour = Number(form.extraDurationRatePerHour);
-  if (![price, km, hours, perKm, perHour].every((value) => Number.isFinite(value) && value > 0)) return null;
+  const perKm = Number(draft.extraDistanceRatePerKm);
+  const perHour = Number(draft.extraDurationRatePerHour);
+  if (![price, km, hours, perKm, perHour].every((value) => Number.isFinite(value) && value >= 0) || !(price > 0 && km > 0 && hours > 0)) return null;
   const extraKm = 5;
   return (
-    <div className="rounded-lg bg-slate-50 px-4 py-3 text-sm text-slate-700">
-      <p className="font-medium text-slate-900">Example</p>
-      <p className="mt-1">
-        Within {km} km and {hours} h: <strong>{formatMoney(price)}</strong>. With {km + extraKm} km and {hours + 1} h:{" "}
-        {formatMoney(price)} + {formatMoney(extraKm * perKm)} distance + {formatMoney(perHour)} time ={" "}
-        <strong>{formatMoney(price + extraKm * perKm + perHour)}</strong>.
-      </p>
-    </div>
+    <p className="mt-2 text-xs text-slate-600">
+      Within {km} km and {hours} h: <strong>{formatMoney(price)}</strong>. With {km + extraKm} km and {hours + 1} h: {formatMoney(price)} +{" "}
+      {formatMoney(extraKm * perKm)} distance + {formatMoney(perHour)} time = <strong>{formatMoney(price + extraKm * perKm + perHour)}</strong>.
+    </p>
   );
 }
 
@@ -981,6 +1097,20 @@ function SaveIndicator({ saving, dirty, saved }: { saving: boolean; dirty: boole
   );
 }
 
+/** "Auto ₹600 → ₹650" for each vehicle whose package price was set, changed or removed. */
+function priceMoves(change: { from: unknown; to: unknown }): string[] {
+  const before = new Map(((change.from as VehiclePrice[] | undefined) ?? []).map((price) => [price.rideType, price.basePrice]));
+  const after = new Map(((change.to as VehiclePrice[] | undefined) ?? []).map((price) => [price.rideType, price.basePrice]));
+  const moves: string[] = [];
+  for (const code of new Set([...before.keys(), ...after.keys()])) {
+    const from = before.get(code);
+    const to = after.get(code);
+    if (from === to) continue;
+    moves.push(`${titleCase(code)} ${from === undefined ? "no price" : formatMoney(from)} → ${to === undefined ? "no price" : formatMoney(to)}`);
+  }
+  return moves;
+}
+
 function HistoryCard({ id }: { id: string }) {
   const { data } = useAuditLog({ page: 1, targetType: "CIRCUIT_PACKAGE", targetId: id });
   return (
@@ -999,12 +1129,12 @@ function HistoryCard({ id }: { id: string }) {
                   {status && ` · ${titleCase(status.from ?? "")} → ${titleCase(status.to ?? "")}`}
                 </p>
                 {Object.keys(changes).length > 0 && <p className="text-slate-600">Changed: {Object.keys(changes).map(titleCase).join(", ")}</p>}
-                {changes.pricing && (
-                  <p className="text-slate-600">
-                    Price {formatMoney((changes.pricing.from as { basePrice?: number } | undefined)?.basePrice)} →{" "}
-                    {formatMoney((changes.pricing.to as { basePrice?: number } | undefined)?.basePrice)}
-                  </p>
-                )}
+                {changes.vehiclePricing &&
+                  priceMoves(changes.vehiclePricing).map((move) => (
+                    <p key={move} className="text-slate-600">
+                      {move}
+                    </p>
+                  ))}
                 {entry.reason && <p className="italic text-slate-500">“{entry.reason}”</p>}
                 <p className="text-slate-400">
                   {entry.adminName ?? "Admin"} · {formatDateTime(entry.createdAt)}

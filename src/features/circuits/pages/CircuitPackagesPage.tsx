@@ -37,7 +37,7 @@ export function CircuitPackagesPage() {
       </div>
       <section className="overflow-hidden rounded-xl border border-slate-200 bg-white shadow-sm">
         <LoadState pending={isPending} error={error} empty={data?.length === 0} emptyText="No circuit packages yet. Create the first one.">
-          <Table head={["Package", "City", "Stops", "Time", "Distance", "Price", "Vehicles", "Status", "Updated"]}>
+          <Table head={["Package", "City", "Stops", "Time", "Distance", "Vehicles & prices", "Status", "Updated"]}>
             {data?.map((pkg) => {
               const cover = circuitCoverUrl(pkg);
               return (
@@ -59,8 +59,27 @@ export function CircuitPackagesPage() {
                   </td>
                   <td className={cell}>{pkg.pricing ? formatDuration(pkg.pricing.includedDurationSeconds) : "—"}</td>
                   <td className={cell}>{pkg.pricing ? `${pkg.pricing.includedDistanceKm} km` : "—"}</td>
-                  <td className={`${cell} font-semibold tabular-nums`}>{pkg.pricing ? formatMoney(pkg.pricing.basePrice) : "—"}</td>
-                  <td className={cell}>{pkg.rideTypes.length ? pkg.rideTypes.map(titleCase).join(", ") : "—"}</td>
+                  <td className={cell}>
+                    {pkg.rideTypes.length === 0 ? (
+                      "—"
+                    ) : (
+                      <ul className="space-y-0.5 whitespace-nowrap">
+                        {pkg.rideTypes.map((code) => {
+                          const price = pkg.vehiclePricing.find((entry) => entry.rideType === code);
+                          return (
+                            <li key={code} className="flex justify-between gap-3">
+                              <span>{titleCase(code)}</span>
+                              {price ? (
+                                <span className="font-semibold tabular-nums">{formatMoney(price.basePrice)}</span>
+                              ) : (
+                                <span className="text-[11px] text-amber-700">no price</span>
+                              )}
+                            </li>
+                          );
+                        })}
+                      </ul>
+                    )}
+                  </td>
                   <td className={cell}>
                     <div className="flex flex-col items-start gap-1">
                       <Pill tone={PACKAGE_STATUS_TONE[pkg.status]}>{titleCase(pkg.status)}</Pill>
