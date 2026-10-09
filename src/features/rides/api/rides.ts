@@ -30,6 +30,24 @@ export const ADMIN_CANCELLABLE: readonly RideStatus[] = ACTIVE_RIDE_STATUSES;
 
 export type ActorType = "CUSTOMER" | "DRIVER" | "ADMIN" | "SYSTEM";
 
+/** How a trip ended. Everything but OTP is something support may want to look at. */
+export const COMPLETION_MODES = ["OTP", "DRIVER_OVERRIDE", "ADMIN", "SOS", "NOT_REQUIRED"] as const;
+export type CompletionMode = (typeof COMPLETION_MODES)[number];
+
+/** The end-of-trip OTP and whether the trip ended the way it should have. */
+export interface RideEndInfo {
+  /** The driver asked to end the trip; the fare is priced to this moment. */
+  requestedAt?: string;
+  mode?: CompletionMode;
+  /** The driver's reason (override) or the admin's note. */
+  note?: string;
+  /** The driver was further than the radius from the booked drop-off when they asked. */
+  farFromDestination: boolean;
+  distanceToDestinationMeters?: number;
+  /** Ended without the rider's code, or far from the drop-off. */
+  needsReview: boolean;
+}
+
 export interface RideLocation {
   address: string;
   latitude: number;
@@ -60,6 +78,8 @@ export interface RideBase {
   id: string;
   rideCode: string;
   status: RideStatus;
+  /** CIRCUIT rides end through the circuit flow, not the end-of-trip OTP. */
+  kind?: "NORMAL" | "CIRCUIT";
   rideType: RideTypeCode;
   vehicleType: string;
   pickup: RideLocation;
@@ -98,6 +118,7 @@ interface PersonRef {
 export interface RideListItem extends RideBase {
   customer: PersonRef | null;
   driver: (PersonRef & { driverId: string; driverCode: string }) | null;
+  end: RideEndInfo;
 }
 
 export interface RideDetail {
@@ -109,6 +130,8 @@ export interface RideDetail {
     assignmentExpiresAt?: string;
     searchExpiresAt: string;
     otp: { issued: boolean; attempts: number; expiresAt?: string; verifiedAt?: string };
+    /** The end-of-trip OTP (never the code) and how the trip ended. */
+    end: RideEndInfo & { otpAttempts: number; otpExpiresAt?: string; otpVerifiedAt?: string };
     vehicle?: {
       vehicleId?: string;
       vehicleType: string;
@@ -168,6 +191,8 @@ export interface RideListFilters {
   status?: RideStatus;
   rideType?: RideTypeCode;
   search?: string;
+  /** Only trips that ended without the rider's code or far from the drop-off. */
+  needsReview?: boolean;
 }
 
 const keys = {
@@ -186,7 +211,7 @@ export function useRides(filters: RideListFilters) {
     queryFn: async () =>
       (
         await apiClient.get<ApiSuccess<Page<RideListItem>>>("/admin/rides", {
-          params: { ...filters, limit: 25, search: filters.search || undefined },
+          params: { ...filters, limit: 25, search: filters.search || undefined, needsReview: filters.needsReview || undefined },
         })
       ).data.data,
     placeholderData: keepPreviousData,
@@ -202,6 +227,19 @@ export function useRide(id: string) {
       query.state.data && ACTIVE_RIDE_STATUSES.concat("RIDE_STARTED").includes(query.state.data.ride.status)
         ? LIVE_REFRESH_MS
         : false,
+  });
+}
+
+/** Ops ends a trip that is under way without the rider's code; recorded as ADMIN and audited. */
+export function useCompleteRide() {
+  const queryClient = useQueryClient();
+  return useMutation({
+    mutationFn: ({ id, note }: { id: string; note: string }) => apiClient.post(`/admin/rides/${id}/complete`, { note }),
+    onSuccess: () =>
+      Promise.all([
+        queryClient.invalidateQueries({ queryKey: keys.all }),
+        queryClient.invalidateQueries({ queryKey: ["admin", "dashboard"] }),
+      ]),
   });
 }
 

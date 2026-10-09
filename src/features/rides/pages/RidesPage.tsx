@@ -4,6 +4,7 @@ import { Link, useSearchParams } from "react-router-dom";
 import { formatDateTime, formatMoney, titleCase } from "@/lib/format";
 import { RIDE_STATUSES, RIDE_TYPES, useRides } from "../api/rides";
 import type { RideListItem, RideStatus, RideTypeCode } from "../api/rides";
+import { RideEndBadge } from "../components/RideEndBadge";
 import { RideStatusBadge } from "../components/RideStatusBadge";
 import { inputClass } from "@/components/Ui";
 
@@ -61,6 +62,7 @@ function RideRow({ ride }: { ride: RideListItem }) {
       </td>
       <td className="px-4 py-2.5 align-middle">
         <RideStatusBadge status={ride.status} />
+        <RideEndBadge end={ride.end} />
       </td>
     </tr>
   );
@@ -71,19 +73,21 @@ export function RidesPage() {
   const status = parseStatus(searchParams.get("status"));
   const rideType = parseRideType(searchParams.get("rideType"));
   const search = searchParams.get("q") ?? "";
+  const needsReview = searchParams.get("review") === "1";
   const page = Math.max(1, Number(searchParams.get("page")) || 1);
   const [searchDraft, setSearchDraft] = useState(search);
 
   useEffect(() => setSearchDraft(search), [search]);
 
-  const { data, error, isPending, isFetching } = useRides({ page, status, rideType, search });
+  const { data, error, isPending, isFetching } = useRides({ page, status, rideType, search, needsReview });
 
-  function update(next: { status?: RideStatus; rideType?: RideTypeCode; q?: string; page?: number }) {
-    const merged = { status, rideType, q: search, page: 1, ...next };
+  function update(next: { status?: RideStatus; rideType?: RideTypeCode; q?: string; page?: number; review?: boolean }) {
+    const merged = { status, rideType, q: search, page: 1, review: needsReview, ...next };
     const params: Record<string, string> = {};
     if (merged.status) params.status = merged.status;
     if (merged.rideType) params.rideType = merged.rideType;
     if (merged.q) params.q = merged.q;
+    if (merged.review) params.review = "1";
     if (merged.page > 1) params.page = String(merged.page);
     setSearchParams(params);
   }
@@ -143,6 +147,17 @@ export function RidesPage() {
             </button>
           );
         })}
+        <button
+          type="button"
+          aria-pressed={needsReview}
+          onClick={() => update({ review: !needsReview })}
+          title="Trips that ended without the rider's code, or far from the booked drop-off"
+          className={`ml-auto rounded-full px-3 py-1 text-[13px] font-medium transition-colors ${
+            needsReview ? "bg-amber-500 text-white shadow-sm" : "bg-white text-amber-700 ring-1 ring-inset ring-amber-300 hover:bg-amber-50"
+          }`}
+        >
+          Needs review
+        </button>
       </div>
 
       <section className="overflow-hidden rounded-xl border border-slate-200 bg-white shadow-sm">

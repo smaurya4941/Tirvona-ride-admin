@@ -1,11 +1,13 @@
 import { useState } from "react";
 import type { ReactNode } from "react";
-import { ArrowLeft, Ban, Loader2, MapPin, XCircle } from "lucide-react";
+import { AlertTriangle, ArrowLeft, Ban, CheckCircle2, Loader2, MapPin, XCircle } from "lucide-react";
 import { Link, useParams } from "react-router-dom";
 import { formatDateTime, formatKm, formatMinutes, formatMoney, titleCase } from "@/lib/format";
-import { ADMIN_CANCELLABLE, useCancelRide, useRide } from "../api/rides";
+import { ADMIN_CANCELLABLE, useCancelRide, useCompleteRide, useRide } from "../api/rides";
 import type { RideDetail, RideLocation } from "../api/rides";
 import { CancelRideDialog } from "../components/CancelRideDialog";
+import { CompleteRideDialog } from "../components/CompleteRideDialog";
+import { COMPLETION_LABELS } from "../components/RideEndBadge";
 import { RideStatusBadge } from "../components/RideStatusBadge";
 import { RidePaymentBadge } from "@/features/payments/components/PaymentBadges";
 
@@ -95,7 +97,9 @@ export function RideDetailPage() {
   const { id = "" } = useParams();
   const { data, error, isPending } = useRide(id);
   const cancel = useCancelRide();
+  const complete = useCompleteRide();
   const [cancelling, setCancelling] = useState(false);
+  const [completing, setCompleting] = useState(false);
 
   if (isPending) {
     return (
@@ -114,6 +118,8 @@ export function RideDetailPage() {
 
   const { ride, customer, driver, history, checkpoints = [] } = data;
   const canCancel = ADMIN_CANCELLABLE.includes(ride.status);
+  // A circuit ends through its own flow (admin → circuit bookings), not the end-of-trip OTP.
+  const canComplete = ride.status === "RIDE_STARTED" && ride.kind !== "CIRCUIT";
 
   return (
     <div className="mx-auto max-w-6xl space-y-5">
@@ -140,7 +146,38 @@ export function RideDetailPage() {
             <Ban className="h-4 w-4" aria-hidden /> Cancel ride
           </button>
         )}
+        {canComplete && (
+          <button
+            type="button"
+            onClick={() => setCompleting(true)}
+            className="flex items-center gap-2 rounded-lg border border-slate-300 bg-white px-4 py-2 text-sm font-semibold text-midnight hover:bg-slate-50"
+          >
+            <CheckCircle2 className="h-4 w-4" aria-hidden /> Complete ride
+          </button>
+        )}
       </header>
+
+      {ride.end.needsReview && (
+        <div className="flex gap-3 rounded-lg border border-amber-300 bg-amber-50 px-4 py-3 text-sm text-amber-900">
+          <AlertTriangle className="mt-0.5 h-4 w-4 shrink-0" aria-hidden />
+          <div>
+            <p className="font-semibold">This trip needs a look</p>
+            <ul className="mt-1 list-disc space-y-0.5 pl-4">
+              {ride.end.mode && ride.end.mode !== "OTP" && ride.end.mode !== "NOT_REQUIRED" && (
+                <li>
+                  {COMPLETION_LABELS[ride.end.mode]}
+                  {ride.end.note ? ` — “${ride.end.note}”` : ""}
+                </li>
+              )}
+              {ride.end.farFromDestination && (
+                <li>
+                  The driver asked to end the trip {formatKm(ride.end.distanceToDestinationMeters)} from the booked drop-off.
+                </li>
+              )}
+            </ul>
+          </div>
+        </div>
+      )}
 
       {ride.cancellation && (
         <div className="rounded-lg bg-slate-100 px-4 py-2 text-sm text-slate-700">
@@ -296,6 +333,39 @@ export function RideDetailPage() {
         </dl>
       </Section>
 
+      <Section title="End of trip">
+        <dl className="grid grid-cols-2 gap-4 sm:grid-cols-3 lg:grid-cols-6">
+          <Field label="End requested" value={formatDateTime(ride.end.requestedAt)} />
+          <Field
+            label="End code"
+            value={
+              ride.end.otpVerifiedAt
+                ? "Verified"
+                : ride.status === "RIDE_STARTED" && ride.end.requestedAt
+                  ? "Waiting for the rider"
+                  : "—"
+            }
+          />
+          <Field label="Wrong code attempts" value={ride.end.requestedAt ? ride.end.otpAttempts : "—"} />
+          <Field label="Ended by" value={ride.end.mode ? COMPLETION_LABELS[ride.end.mode] : "—"} />
+          <Field
+            label="Driver from drop-off"
+            value={
+              ride.end.distanceToDestinationMeters === undefined ? (
+                "—"
+              ) : (
+                <span className={ride.end.farFromDestination ? "font-semibold text-amber-700" : undefined}>
+                  {formatKm(ride.end.distanceToDestinationMeters)}
+                </span>
+              )
+            }
+          />
+          <Field label="Completed" value={formatDateTime(ride.completedAt)} />
+        </dl>
+        {ride.end.note && <p className="mt-4 border-t border-slate-100 pt-3 text-sm text-slate-700">Note: {ride.end.note}</p>}
+        <p className="mt-3 text-xs text-slate-500">The fare is priced up to the moment the driver asked to end the trip, not when the code was entered.</p>
+      </Section>
+
       <Section title="Status history">
         <div className="overflow-x-auto">
           <table className="w-full text-left text-sm">
@@ -369,6 +439,20 @@ export function RideDetailPage() {
           </div>
         )}
       </Section>
+
+      {completing && (
+        <CompleteRideDialog
+          rideCode={ride.rideCode}
+          endRequested={Boolean(ride.end.requestedAt)}
+          isSubmitting={complete.isPending}
+          error={complete.error?.message ?? null}
+          onCancel={() => {
+            complete.reset();
+            setCompleting(false);
+          }}
+          onConfirm={(note) => complete.mutate({ id: ride.id, note }, { onSuccess: () => setCompleting(false) })}
+        />
+      )}
 
       {cancelling && (
         <CancelRideDialog
