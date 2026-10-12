@@ -5,6 +5,7 @@ import { Field, Section, timeAgo } from "@/components/DetailUi";
 import { formatDateTime, titleCase } from "@/lib/format";
 import { OPEN_SOS_STATUSES, mapsLink, useNotifyContacts, useSos, useUpdateSos } from "../api/sos";
 import type { SosDetail, SosStatus } from "../api/sos";
+import { SosAudioPanel } from "../components/SosAudioPanel";
 import { LOCATION_SOURCE_LABEL, SosStatusBadge } from "../components/SosBadges";
 
 /** OpenStreetMap's keyless embed, centred on the incident. */
@@ -184,6 +185,8 @@ export function SosDetailPage() {
               </p>
             )}
           </Section>
+
+          <SosAudioPanel sosId={sos.id} sosCode={sos.sosCode} audio={sos.audio} />
 
           <Section title="Ride">
             {sos.ride ? (

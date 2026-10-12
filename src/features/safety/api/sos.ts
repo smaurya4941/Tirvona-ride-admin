@@ -44,7 +44,39 @@ export interface SosListItem {
   cancelledAt?: string;
 }
 
+export type SosAudioState = "NONE" | "RECORDING" | "STOPPED" | "INTERRUPTED" | "UNAVAILABLE";
+
+/** The microphone recording of an incident, as the server has stored it. */
+export interface SosAudio {
+  enabled: boolean;
+  state: SosAudioState;
+  /** What the phone last said about its microphone. */
+  deviceState?: "RECORDING" | "STOPPED" | "PERMISSION_DENIED" | "FAILED";
+  chunks: number;
+  seconds: number;
+  bytes: number;
+  nextSeq: number;
+  sampleRate: number;
+  /** Chunks that never arrived: a gap in the recording. */
+  missingChunks: number;
+  firstChunkAt?: string;
+  lastChunkAt?: string;
+  stoppedAt?: string;
+  consentVersion?: string;
+  retentionUntil?: string;
+  /** Who listened, newest last. */
+  access: Array<{ actor: "ADMIN" | "CONTACT"; kind: "LIVE" | "PLAYBACK" | "DOWNLOAD"; at: string; admin?: string }>;
+}
+
+export interface SosAudioChunks {
+  chunks: Array<{ seq: number; durationMs: number }>;
+  latestSeq: number;
+  state: SosAudioState;
+  seconds: number;
+}
+
 export interface SosDetail extends SosListItem {
+  audio: SosAudio;
   locationUpdates: SosLocation[];
   emergencyContacts: Array<{ name: string; phone: string; relationship?: string; isPrimary: boolean }>;
   contactsNotification: "NOT_SENT" | "SENT" | "FAILED";
@@ -161,5 +193,23 @@ export function useNotifyContacts() {
   });
 }
 
-export const mapsLink = (latitude: number, longitude: number) =>
+/** The recording so far as one WAV file. The API needs the admin's token, so it is fetched, not linked. */
+export async function fetchSosRecording(id: string, download = false): Promise<Blob> {
+  const response = await apiClient.get<Blob>(`/admin/sos/${id}/audio/recording`, {
+    params: download ? { download: 1 } : undefined,
+    responseType: "blob",
+    timeout: 120_000,
+  });
+  return response.data;
+}
+
+export async function fetchSosAudioChunks(id: string, query: { after?: number; tail?: number }): Promise<SosAudioChunks> {
+  return (await apiClient.get<ApiSuccess<SosAudioChunks>>(`/admin/sos/${id}/audio/chunks`, { params: query })).data.data;
+}
+
+export async function fetchSosAudioChunk(id: string, seq: number): Promise<ArrayBuffer> {
+  return (await apiClient.get<ArrayBuffer>(`/admin/sos/${id}/audio/chunks/${seq}`, { responseType: "arraybuffer" })).data;
+}
+
+export const mapsLink =(latitude: number, longitude: number) =>
   `https://www.google.com/maps/search/?api=1&query=${latitude.toFixed(6)},${longitude.toFixed(6)}`;
