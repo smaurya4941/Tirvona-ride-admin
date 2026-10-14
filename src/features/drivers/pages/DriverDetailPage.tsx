@@ -7,6 +7,7 @@ import {
   documentFilePath,
   useApproveDriver,
   useDriver,
+  useManualApproveDriver,
   useReinstateDriver,
   useRejectDriver,
   useSuspendDriver,
@@ -99,7 +100,8 @@ export function DriverDetailPage() {
   const [rejecting, setRejecting] = useState(false);
   const suspend = useSuspendDriver();
   const reinstate = useReinstateDriver();
-  const [confirming, setConfirming] = useState<"approve" | "suspend" | "reinstate" | null>(null);
+  const manualApprove = useManualApproveDriver();
+  const [confirming, setConfirming] = useState<"approve" | "manual-approve" | "suspend" | "reinstate" | null>(null);
 
   if (isPending) {
     return (
@@ -119,6 +121,9 @@ export function DriverDetailPage() {
   const { driver, user, documents, vehicles } = data;
   // Mirrors the server's state machine: only UNDER_REVIEW can be decided.
   const canDecide = driver.driverStatus === "UNDER_REVIEW";
+  // Admin override: also open to PENDING (no KYC submitted) and REJECTED drivers.
+  const canManualApprove =
+    driver.driverStatus === "PENDING" || driver.driverStatus === "UNDER_REVIEW" || driver.driverStatus === "REJECTED";
   const decisionError = approve.error?.message ?? null;
 
   return (
@@ -136,28 +141,44 @@ export function DriverDetailPage() {
           </p>
         </div>
 
-        {canDecide && (
+        {canManualApprove && (
           <div className="flex gap-3">
+            {canDecide && (
+              <button
+                type="button"
+                onClick={() => setRejecting(true)}
+                disabled={approve.isPending}
+                className="flex items-center gap-2 rounded-lg border border-red-300 bg-white px-4 py-2 text-sm font-semibold text-red-700 hover:bg-red-50 disabled:opacity-50"
+              >
+                <XCircle className="h-4 w-4" aria-hidden /> Reject
+              </button>
+            )}
+            {canDecide ? (
+              <button
+                type="button"
+                onClick={() => setConfirming("approve")}
+                disabled={approve.isPending}
+                className="flex items-center gap-2 rounded-lg bg-emerald-600 px-4 py-2 text-sm font-semibold text-white hover:bg-emerald-700 disabled:opacity-50"
+              >
+                {approve.isPending ? (
+                  <Loader2 className="h-4 w-4 animate-spin" aria-hidden />
+                ) : (
+                  <CheckCircle2 className="h-4 w-4" aria-hidden />
+                )}
+                Approve driver
+              </button>
+            ) : null}
             <button
               type="button"
-              onClick={() => setRejecting(true)}
-              disabled={approve.isPending}
-              className="flex items-center gap-2 rounded-lg border border-red-300 bg-white px-4 py-2 text-sm font-semibold text-red-700 hover:bg-red-50 disabled:opacity-50"
+              onClick={() => setConfirming("manual-approve")}
+              disabled={manualApprove.isPending}
+              className={
+                canDecide
+                  ? "flex items-center gap-2 rounded-lg border border-emerald-300 bg-white px-4 py-2 text-sm font-semibold text-emerald-700 hover:bg-emerald-50 disabled:opacity-50"
+                  : "flex items-center gap-2 rounded-lg bg-emerald-600 px-4 py-2 text-sm font-semibold text-white hover:bg-emerald-700 disabled:opacity-50"
+              }
             >
-              <XCircle className="h-4 w-4" aria-hidden /> Reject
-            </button>
-            <button
-              type="button"
-              onClick={() => setConfirming("approve")}
-              disabled={approve.isPending}
-              className="flex items-center gap-2 rounded-lg bg-emerald-600 px-4 py-2 text-sm font-semibold text-white hover:bg-emerald-700 disabled:opacity-50"
-            >
-              {approve.isPending ? (
-                <Loader2 className="h-4 w-4 animate-spin" aria-hidden />
-              ) : (
-                <CheckCircle2 className="h-4 w-4" aria-hidden />
-              )}
-              Approve driver
+              <CheckCircle2 className="h-4 w-4" aria-hidden /> Approve manually
             </button>
           </div>
         )}
@@ -188,6 +209,11 @@ export function DriverDetailPage() {
         </p>
       )}
 
+      {driver.manualApprovalReason && driver.driverStatus !== "REJECTED" && (
+        <Notice tone="warning">
+          Approved manually by an admin without a KYC submission: {driver.manualApprovalReason}
+        </Notice>
+      )}
       {driver.driverStatus === "SUSPENDED" && (
         <Notice tone="warning">
           Suspended {formatDate(driver.suspendedAt)}{driver.suspensionReason ? `: ${driver.suspensionReason}` : ""}. The driver cannot go online or take rides.
@@ -287,6 +313,18 @@ export function DriverDetailPage() {
           error={approve.error?.message}
           onCancel={() => { approve.reset(); setConfirming(null); }}
           onConfirm={() => approve.mutate(driver.id, { onSuccess: () => setConfirming(null) })}
+        />
+      )}
+      {confirming === "manual-approve" && (
+        <ConfirmDialog
+          title="Approve this driver manually?"
+          body="This skips the KYC submission check: the driver is approved even if no documents were uploaded. They can go online once they add a vehicle. Your name and the reason are saved in the admin action history."
+          confirmLabel="Approve manually"
+          reasonLabel="Reason for manual approval"
+          busy={manualApprove.isPending}
+          error={manualApprove.error?.message}
+          onCancel={() => { manualApprove.reset(); setConfirming(null); }}
+          onConfirm={(reason) => manualApprove.mutate({ id: driver.id, reason: reason ?? "" }, { onSuccess: () => setConfirming(null) })}
         />
       )}
       {confirming === "suspend" && (

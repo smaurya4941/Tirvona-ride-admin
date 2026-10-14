@@ -19,6 +19,8 @@ export interface DriverSummary {
   totalRides: number;
   approvedAt?: string;
   rejectionReason?: string;
+  /** Present when an admin approved without a KYC submission. */
+  manualApprovalReason?: string;
   isOnline?: boolean;
   isAvailable?: boolean;
   /** May be offered circuit rides. */
@@ -174,6 +176,12 @@ function useDriverDecision<TVariables>(request: (variables: TVariables) => Promi
 
 export function useApproveDriver() {
   return useDriverDecision((id: string) => apiClient.patch(`/admin/drivers/${id}/approve`));
+}
+
+export function useManualApproveDriver() {
+  return useDriverDecision(({ id, reason }: { id: string; reason: string }) =>
+    apiClient.patch(`/admin/drivers/${id}/manual-approve`, { reason }),
+  );
 }
 
 export function useRejectDriver() {
