@@ -63,8 +63,8 @@ export const useSetCustomerBlocked = () =>
 
 // ── Vehicles ───────────────────────────────────────────────────────────
 
-export const VEHICLE_TYPES = ["BIKE", "AUTO", "E_RICKSHAW", "CAB"] as const;
-export type VehicleType = (typeof VEHICLE_TYPES)[number];
+/** A vehicle type is the code of a ride type: creating a ride type creates the vehicle type drivers register. */
+export type VehicleType = string;
 
 export interface VehicleListItem {
   id: string;
@@ -84,7 +84,9 @@ export const useVehicles = (params: { page: number; search?: string; vehicleType
 
 // ── Ride types (with tariff) ───────────────────────────────────────────
 
-export const RIDE_TYPE_ICONS = ["bike", "auto", "e_rickshaw", "cab", "cab_xl", "premium"] as const;
+export const RIDE_TYPE_ICONS = ["bike", "auto", "e_rickshaw", "cab", "cab_xl", "premium", "tempo", "bus"] as const;
+/** Matches the server limit; a bus seats far more than a cab. */
+export const MAX_SEAT_CAPACITY = 60;
 
 export interface RideTypeRow {
   rideType: {
@@ -107,7 +109,6 @@ export interface CreateRideTypeInput {
   displayName: string;
   description?: string;
   icon: string;
-  vehicleType: VehicleType;
   seatCapacity: number;
   sortOrder?: number;
   isActive?: boolean;

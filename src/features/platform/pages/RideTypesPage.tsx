@@ -4,8 +4,8 @@ import { Plus } from "lucide-react";
 import { Link } from "react-router-dom";
 import { Button, ConfirmDialog, FormField, LoadState, Modal, Notice, PageHeader, Pill, Table, Toggle, cell, inputClass } from "@/components/Ui";
 import { formatMoney, titleCase } from "@/lib/format";
-import { RIDE_TYPE_ICONS, VEHICLE_TYPES, useCreateRideType, useRideTypes, useSetTariff, useUpdateRideType7 } from "../api";
-import type { CreateRideTypeInput, RideTypeRow, VehicleType } from "../api";
+import { MAX_SEAT_CAPACITY, RIDE_TYPE_ICONS, useCreateRideType, useRideTypes, useSetTariff, useUpdateRideType7 } from "../api";
+import type { CreateRideTypeInput, RideTypeRow } from "../api";
 import { formatKilometers, formatMeters, parseBounded, useRideDistanceConfigs } from "@/features/ride-config/api";
 
 const RATES = [
@@ -50,7 +50,6 @@ function RideTypeForm({ row, onClose }: { row?: RideTypeRow; onClose: () => void
     displayName: row?.rideType.displayName ?? "",
     description: row?.rideType.description ?? "",
     icon: row?.rideType.icon ?? "cab",
-    vehicleType: (row?.rideType.vehicleType ?? "CAB") as VehicleType,
     seatCapacity: String(row?.rideType.seatCapacity ?? 4),
     sortOrder: String(row?.rideType.sortOrder ?? 50),
   });
@@ -68,13 +67,12 @@ function RideTypeForm({ row, onClose }: { row?: RideTypeRow; onClose: () => void
     if (form.displayName.trim().length < 2) return setError("Enter a display name");
     const seats = Number(form.seatCapacity);
     const sortOrder = Number(form.sortOrder);
-    if (!Number.isInteger(seats) || seats < 1 || seats > 8) return setError("Seats: 1–8");
+    if (!Number.isInteger(seats) || seats < 1 || seats > MAX_SEAT_CAPACITY) return setError(`Seats: 1–${MAX_SEAT_CAPACITY}`);
     if (!Number.isInteger(sortOrder) || sortOrder < 0 || sortOrder > 100) return setError("Sort order: 0–100");
     const common = {
       displayName: form.displayName.trim(),
       description: form.description.trim(),
       icon: form.icon,
-      vehicleType: form.vehicleType,
       seatCapacity: seats,
       sortOrder,
     };
@@ -106,7 +104,7 @@ function RideTypeForm({ row, onClose }: { row?: RideTypeRow; onClose: () => void
     <Modal title={row ? `Edit ${row.rideType.displayName}` : "New ride type"} onClose={onClose}>
       <form onSubmit={submit} className="space-y-4">
         <div className="grid grid-cols-2 gap-3">
-          <FormField label="Code" hint={row ? "Codes never change (historical rides use them)" : "e.g. CAB_XL"}>
+          <FormField label="Code" hint={row ? "Codes never change (historical rides use them)" : "e.g. BUS or TEMPO"}>
             <input value={form.code} disabled={Boolean(row)} onChange={(event) => setForm({ ...form, code: event.target.value.toUpperCase() })} className={inputClass} maxLength={24} />
           </FormField>
           <FormField label="Display name">
@@ -116,16 +114,7 @@ function RideTypeForm({ row, onClose }: { row?: RideTypeRow; onClose: () => void
         <FormField label="Description" hint="Shown to customers under the name">
           <input value={form.description} onChange={(event) => setForm({ ...form, description: event.target.value })} className={inputClass} maxLength={160} />
         </FormField>
-        <div className="grid grid-cols-2 gap-3 sm:grid-cols-4">
-          <FormField label="Served by" hint="Drivers of this vehicle type">
-            <select value={form.vehicleType} onChange={(event) => setForm({ ...form, vehicleType: event.target.value as VehicleType })} className={inputClass}>
-              {VEHICLE_TYPES.map((type) => (
-                <option key={type} value={type}>
-                  {titleCase(type)}
-                </option>
-              ))}
-            </select>
-          </FormField>
+        <div className="grid grid-cols-2 gap-3 sm:grid-cols-3">
           <FormField label="App icon">
             <select value={form.icon} onChange={(event) => setForm({ ...form, icon: event.target.value })} className={inputClass}>
               {RIDE_TYPE_ICONS.map((icon) => (
@@ -142,6 +131,10 @@ function RideTypeForm({ row, onClose }: { row?: RideTypeRow; onClose: () => void
             <input inputMode="numeric" value={form.sortOrder} onChange={(event) => setForm({ ...form, sortOrder: event.target.value })} className={inputClass} />
           </FormField>
         </div>
+        <p className="text-xs text-slate-500">
+          A ride type is also a vehicle type: drivers register their vehicle as <span className="font-mono">{form.code || "this code"}</span> and only drivers with
+          that vehicle type are offered these rides.
+        </p>
         {!row && (
           <div className="rounded-xl border border-slate-200 p-3">
             <p className="text-sm font-medium text-slate-800">Trip distance limits</p>
@@ -237,7 +230,7 @@ export function RideTypesPage() {
       {update.error && !toggling && <Notice tone="error">{update.error.message}</Notice>}
       <section className="overflow-hidden rounded-xl border border-slate-200 bg-white shadow-sm">
         <LoadState pending={isPending} error={error} empty={data?.length === 0}>
-          <Table head={["Ride type", "Served by", "Seats", "Tariff", "Trip distance", "Bookable", ""]}>
+          <Table head={["Ride type", "Seats", "Tariff", "Trip distance", "Bookable", ""]}>
             {data?.map((row) => (
               <tr key={row.rideType.code} className={row.rideType.isActive ? "" : "bg-slate-50/60"}>
                 <td className={cell}>
@@ -245,7 +238,6 @@ export function RideTypesPage() {
                   <p className="font-mono text-xs text-slate-500">{row.rideType.code}</p>
                   {row.rideType.description && <p className="text-xs text-slate-500">{row.rideType.description}</p>}
                 </td>
-                <td className={cell}>{titleCase(row.rideType.vehicleType)}</td>
                 <td className={`${cell} tabular-nums`}>{row.rideType.seatCapacity}</td>
                 <td className={cell}>
                   {row.pricing ? (

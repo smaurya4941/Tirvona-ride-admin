@@ -1,6 +1,6 @@
 import { useMemo, useState } from "react";
 import type { FormEvent } from "react";
-import { Bike, Car, CheckCircle2, Loader2, Save, Truck, XCircle } from "lucide-react";
+import { Bike, Bus, Car, CheckCircle2, Loader2, Save, Truck, XCircle } from "lucide-react";
 import type { LucideIcon } from "lucide-react";
 import { formatDateTime, formatMoney } from "@/lib/format";
 import type { RideTypeCode } from "@/features/rides/api/rides";
@@ -9,7 +9,7 @@ import { PricingTabs } from "../components/PricingTabs";
 import { previewFare, usePricing, useUpdatePricing } from "../api/pricing";
 import type { PricingRates, PricingRow } from "../api/pricing";
 
-const ICONS: Record<string, LucideIcon> = { bike: Bike, auto: Truck, e_rickshaw: Truck, cab: Car, cab_xl: Car, premium: Car };
+const ICONS: Record<string, LucideIcon> = { bike: Bike, auto: Truck, e_rickshaw: Truck, cab: Car, cab_xl: Car, premium: Car, tempo: Truck, bus: Bus };
 
 const FIELDS: Array<{ key: keyof PricingRates; label: string; hint: string; max: number }> = [
   { key: "baseFare", label: "Base fare", hint: "Charged on every ride", max: 5_000 },

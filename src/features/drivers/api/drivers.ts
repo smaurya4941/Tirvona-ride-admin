@@ -45,7 +45,8 @@ export interface DriverDocument {
 
 export interface VehicleSummary {
   id: string;
-  vehicleType: "BIKE" | "AUTO" | "E_RICKSHAW" | "CAB";
+  /** Code of a ride type (admin-managed). */
+  vehicleType: string;
   registrationNumber: string;
   make?: string;
   model?: string;

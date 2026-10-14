@@ -2,14 +2,17 @@ import { Link, useSearchParams } from "react-router-dom";
 import { FilterTabs, Pager } from "@/components/DetailUi";
 import { LoadState, PageHeader, Pill, SearchBox, Table, cell } from "@/components/Ui";
 import { formatDateTime, titleCase } from "@/lib/format";
-import { VEHICLE_TYPES, useVehicles } from "../api";
+import { useRideTypes, useVehicles } from "../api";
 import type { VehicleType } from "../api";
 
 export function VehiclesPage() {
   const [params, setParams] = useSearchParams();
   const page = Math.max(1, Number(params.get("page")) || 1);
   const search = params.get("q") ?? "";
-  const vehicleType = VEHICLE_TYPES.find((type) => type === params.get("type"));
+  // Vehicle types are the admin-managed ride types, so the filter follows what exists.
+  const vehicleTypes = (useRideTypes().data ?? []).map((row) => row.rideType.vehicleType);
+  const requestedType = params.get("type");
+  const vehicleType = vehicleTypes.find((type) => type === requestedType);
   const { data, error, isPending, isFetching } = useVehicles({ page, search, vehicleType });
 
   function update(next: { q?: string; type?: VehicleType; page?: number }) {
@@ -25,7 +28,7 @@ export function VehiclesPage() {
     <div className="mx-auto max-w-6xl space-y-5">
       <PageHeader title="Vehicles" subtitle="Every registered vehicle and the driver it belongs to. Documents are reviewed on the driver's page." />
       <div className="flex flex-wrap items-center justify-between gap-3">
-        <FilterTabs<VehicleType> label="Vehicle type" options={[undefined, ...VEHICLE_TYPES]} value={vehicleType} onChange={(type) => update({ type })} render={(type) => (type ? titleCase(type) : "All")} />
+        <FilterTabs<VehicleType> label="Vehicle type" options={[undefined, ...new Set(vehicleTypes)]} value={vehicleType} onChange={(type) => update({ type })} render={(type) => (type ? titleCase(type) : "All")} />
         <SearchBox value={search} onChange={(q) => update({ q })} placeholder="Registration number" />
       </div>
       <section className="overflow-hidden rounded-xl border border-slate-200 bg-white shadow-sm">
