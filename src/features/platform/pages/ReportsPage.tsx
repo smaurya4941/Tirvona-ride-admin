@@ -359,7 +359,7 @@ function FareQuotes({ range }: { range: RangeQuery }) {
               <Grid>
                 <StatCard label="Upfront rides" value={count(data.totals.rides)} />
                 <StatCard label="Locked quotes" value={money(data.totals.quoted)} />
-                <StatCard label="Billed for the trip" value={money(data.totals.billed)} hint="Quote, or less after an early drop" />
+                <StatCard label="Billed for the trip" value={money(data.totals.billed)} hint="The locked quote, before waiting" />
                 <StatCard label="Meter would have charged" value={money(data.totals.metered)} />
                 <StatCard
                   label="Difference vs meter"
@@ -368,12 +368,11 @@ function FareQuotes({ range }: { range: RangeQuery }) {
                   hint={`${data.totals.variancePercent > 0 ? "+" : ""}${data.totals.variancePercent}% · negative means Tirvona absorbed it`}
                 />
                 <StatCard label="Billed below the meter" value={count(data.totals.absorbedRides)} tone="warn" hint={`Cost ${money(Math.abs(data.totals.absorbed))}`} />
-                <StatCard label="Early drops" value={count(data.totals.earlyDrops)} />
                 <StatCard label="Waiting charges" value={money(data.totals.waitingCharges)} hint={`${data.totals.waitingRides} rides`} />
               </Grid>
 
               <Section title="By ride type">
-                <Table head={["Ride type", "Rides", "Quoted", "Billed", "Meter", "Difference", "Billed below meter", "Early drops"]}>
+                <Table head={["Ride type", "Rides", "Quoted", "Billed", "Meter", "Difference", "Billed below meter"]}>
                   {data.byRideType.map((row) => (
                     <tr key={row.rideType}>
                       <td className={cell}>{titleCase(row.rideType)}</td>
@@ -387,7 +386,6 @@ function FareQuotes({ range }: { range: RangeQuery }) {
                       <td className={`${cell} tabular-nums`}>
                         {row.absorbedRides} · {money(Math.abs(row.absorbed))}
                       </td>
-                      <td className={`${cell} tabular-nums`}>{row.earlyDrops}</td>
                     </tr>
                   ))}
                 </Table>

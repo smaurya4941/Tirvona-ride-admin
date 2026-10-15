@@ -219,15 +219,13 @@ function FareSettingsForm({ response }: { response: PlatformSettingsResponse }) 
   const { settings, limits } = response;
   const [validity, setValidity] = useState(String(settings?.quoteValiditySeconds ?? 300));
   const [buffer, setBuffer] = useState(String(settings?.etaBufferPercent ?? 10));
-  const [threshold, setThreshold] = useState(String(settings?.earlyDropThresholdPercent ?? 70));
   const [error, setError] = useState<string | null>(null);
   const [saved, setSaved] = useState(false);
 
   const dirty =
     !settings ||
     validity.trim() !== String(settings.quoteValiditySeconds) ||
-    buffer.trim() !== String(settings.etaBufferPercent) ||
-    threshold.trim() !== String(settings.earlyDropThresholdPercent);
+    buffer.trim() !== String(settings.etaBufferPercent);
   const touch = (set: (value: string) => void) => (value: string) => {
     set(value);
     setSaved(false);
@@ -241,25 +239,20 @@ function FareSettingsForm({ response }: { response: PlatformSettingsResponse }) 
     if ("error" in parsedValidity) return setError(parsedValidity.error);
     const parsedBuffer = parseWhole(buffer, "ETA buffer", limits.etaBufferPercent, "%");
     if ("error" in parsedBuffer) return setError(parsedBuffer.error);
-    const parsedThreshold = parseWhole(threshold, "Early-drop threshold", limits.earlyDropThresholdPercent, "%");
-    if ("error" in parsedThreshold) return setError(parsedThreshold.error);
     update.mutate(
-      { quoteValiditySeconds: parsedValidity.value, etaBufferPercent: parsedBuffer.value, earlyDropThresholdPercent: parsedThreshold.value },
+      { quoteValiditySeconds: parsedValidity.value, etaBufferPercent: parsedBuffer.value },
       { onSuccess: () => setSaved(true) },
     );
   }
 
   return (
     <form onSubmit={submit} noValidate className="rounded-xl border border-slate-200 bg-white p-5 shadow-sm">
-      <div className="grid gap-5 sm:grid-cols-3">
+      <div className="grid gap-5 sm:grid-cols-2">
         <FormField label="Quote validity" hint="How long a customer can confirm a quoted upfront fare. After this the app asks them to review the price again.">
           <UnitInput label="Quote validity" unit="seconds" value={validity} onChange={touch(setValidity)} />
         </FormField>
         <FormField label="ETA buffer" hint="Percent added to the route time when quoting, as slack for traffic. A higher buffer means higher quotes and fewer losses on slow trips.">
           <UnitInput label="ETA buffer" unit="%" value={buffer} onChange={touch(setBuffer)} />
-        </FormField>
-        <FormField label="Early-drop threshold" hint="A trip that ends short of this share of the booked distance (and far from the drop-off) is billed on the distance travelled, never above the quote.">
-          <UnitInput label="Early-drop threshold" unit="%" value={threshold} onChange={touch(setThreshold)} />
         </FormField>
       </div>
       {(error || update.error) && (
@@ -269,7 +262,7 @@ function FareSettingsForm({ response }: { response: PlatformSettingsResponse }) 
       )}
       {saved && !dirty && (
         <p className="mt-4 flex items-center gap-2 rounded-lg bg-emerald-50 px-4 py-2 text-sm text-emerald-800">
-          <CheckCircle2 className="h-4 w-4" aria-hidden /> Saved. The next quote uses these values. Rides already booked keep the threshold they were booked with.
+          <CheckCircle2 className="h-4 w-4" aria-hidden /> Saved. The next quote uses these values. Rides already booked keep the price they were quoted.
         </p>
       )}
       <footer className="mt-5 flex flex-wrap items-center justify-between gap-3 border-t border-slate-100 pt-4">

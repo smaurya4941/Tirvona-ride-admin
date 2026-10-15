@@ -40,7 +40,6 @@ export interface RadiusBounds {
   nearbyDriversRadiusKm: { min: number; max: number };
   quoteValiditySeconds: { min: number; max: number };
   etaBufferPercent: { min: number; max: number };
-  earlyDropThresholdPercent: { min: number; max: number };
 }
 
 export interface PlatformSettings {
@@ -50,8 +49,6 @@ export interface PlatformSettings {
   quoteValiditySeconds: number;
   /** Upfront fares: percent added to the route ETA when quoting. */
   etaBufferPercent: number;
-  /** Upfront fares: below this percent of the booked distance a trip is an early drop. */
-  earlyDropThresholdPercent: number;
   version: number;
   updatedBy?: string;
   updatedAt: string;

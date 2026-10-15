@@ -169,7 +169,7 @@ function RideTypeForm({ row, onClose }: { row?: RideTypeRow; onClose: () => void
             {(
               [
                 { value: "METERED", title: "Metered", body: "The fare is recalculated from the actual time and distance when the trip ends (capped at 1.5× the estimate)." },
-                { value: "UPFRONT", title: "Upfront", body: "The price quoted at booking is the price. Only a wait at the pickup adds to it, and a trip ended well short of the drop-off costs less." },
+                { value: "UPFRONT", title: "Upfront", body: "The price quoted at booking is the final price, however long the trip takes. Only a wait at the pickup (if you set a waiting rate) adds to it." },
               ] as const
             ).map((option) => (
               <label
@@ -196,7 +196,7 @@ function RideTypeForm({ row, onClose }: { row?: RideTypeRow; onClose: () => void
             </FormField>
           </div>
           <p className="mt-2 text-xs text-slate-500">
-            Waiting is charged only on upfront rides, from the driver&apos;s arrival to the start of the trip, past the free minutes and rounded up to whole minutes. Quote validity, the ETA buffer and the early-drop threshold are on the Ride limits page.
+            Waiting is charged only on upfront rides, from the driver&apos;s arrival to the start of the trip, past the free minutes and rounded up to whole minutes. Quote validity and the ETA buffer are on the Ride limits page.
             {row && " Rides already booked keep the terms they were booked with."}
           </p>
         </div>

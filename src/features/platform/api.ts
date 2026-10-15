@@ -493,7 +493,6 @@ export interface FareQuoteRow {
   variancePercent: number;
   absorbedRides: number;
   absorbed: number;
-  earlyDrops: number;
   waitingCharges: number;
   waitingRides: number;
 }

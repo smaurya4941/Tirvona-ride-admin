@@ -258,9 +258,6 @@ export function RideDetailPage() {
           />
           <div className="mt-2 border-t border-slate-100 pt-2">
             <FareRow label={upfront ? "Quoted fare (locked)" : "Estimated fare"} value={formatMoney(ride.fare.estimatedFare)} strong />
-            {upfront && final?.earlyDrop && (
-              <FareRow label="Early drop (billed on distance travelled)" value={formatMoney(final.total - (final.waitingCharge ?? 0) - (final.adjustmentsTotal ?? 0))} />
-            )}
             {upfront && !!final?.waitingCharge && (
               <FareRow
                 label={`Waiting (${final.waitingChargeableMinutes} min charged, ${Math.round((final.waitingSeconds ?? 0) / 60)} min waited)`}
