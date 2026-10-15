@@ -4,8 +4,8 @@ import { Plus } from "lucide-react";
 import { Link } from "react-router-dom";
 import { Button, ConfirmDialog, FormField, LoadState, Modal, Notice, PageHeader, Pill, Table, Toggle, cell, inputClass } from "@/components/Ui";
 import { formatMoney, titleCase } from "@/lib/format";
-import { MAX_SEAT_CAPACITY, RIDE_TYPE_ICONS, useCreateRideType, useRideTypes, useSetTariff, useUpdateRideType7 } from "../api";
-import type { CreateRideTypeInput, RideTypeRow } from "../api";
+import { MAX_SEAT_CAPACITY, RIDE_TYPE_ICONS, WAITING_LIMITS, useCreateRideType, useRideTypes, useSetTariff, useUpdateRideType7 } from "../api";
+import type { CreateRideTypeInput, PricingMode, RideTypeRow } from "../api";
 import { formatKilometers, formatMeters, parseBounded, useRideDistanceConfigs } from "@/features/ride-config/api";
 
 const RATES = [
@@ -51,7 +51,12 @@ function RideTypeForm({ row, onClose }: { row?: RideTypeRow; onClose: () => void
     description: row?.rideType.description ?? "",
     icon: row?.rideType.icon ?? "cab",
     seatCapacity: String(row?.rideType.seatCapacity ?? 4),
+    licenseRequired: row?.rideType.licenseRequired ?? true,
     sortOrder: String(row?.rideType.sortOrder ?? 50),
+    pricingMode: (row?.rideType.pricingMode ?? "METERED") as PricingMode,
+    waitFreeMinutes: String(row?.rideType.waitFreeMinutes ?? 3),
+    waitPerMinuteRate: String(row?.rideType.waitPerMinuteRate ?? 0),
+    waitMaxChargeMinutes: String(row?.rideType.waitMaxChargeMinutes ?? 15),
   });
   const [withTariff, setWithTariff] = useState(false);
   const [rates, setRates] = useState<RateDraft>(emptyRates);
@@ -69,11 +74,25 @@ function RideTypeForm({ row, onClose }: { row?: RideTypeRow; onClose: () => void
     const sortOrder = Number(form.sortOrder);
     if (!Number.isInteger(seats) || seats < 1 || seats > MAX_SEAT_CAPACITY) return setError(`Seats: 1–${MAX_SEAT_CAPACITY}`);
     if (!Number.isInteger(sortOrder) || sortOrder < 0 || sortOrder > 100) return setError("Sort order: 0–100");
+    const freeMinutes = Number(form.waitFreeMinutes);
+    const maxMinutes = Number(form.waitMaxChargeMinutes);
+    const waitRate = Number(form.waitPerMinuteRate);
+    if (!/^\d+$/.test(form.waitFreeMinutes.trim()) || freeMinutes < WAITING_LIMITS.freeMinutes.min || freeMinutes > WAITING_LIMITS.freeMinutes.max)
+      return setError(`Free waiting minutes: a whole number ${WAITING_LIMITS.freeMinutes.min}–${WAITING_LIMITS.freeMinutes.max}`);
+    if (!/^\d+(\.\d{1,2})?$/.test(form.waitPerMinuteRate.trim()) || waitRate > WAITING_LIMITS.perMinuteRate.max)
+      return setError(`Waiting rate: ₹0–${WAITING_LIMITS.perMinuteRate.max} per minute, at most 2 decimals`);
+    if (!/^\d+$/.test(form.waitMaxChargeMinutes.trim()) || maxMinutes > WAITING_LIMITS.maxChargeMinutes.max)
+      return setError(`Most chargeable waiting minutes: a whole number 0–${WAITING_LIMITS.maxChargeMinutes.max}`);
     const common = {
       displayName: form.displayName.trim(),
       description: form.description.trim(),
       icon: form.icon,
       seatCapacity: seats,
+      licenseRequired: form.licenseRequired,
+      pricingMode: form.pricingMode,
+      waitFreeMinutes: freeMinutes,
+      waitPerMinuteRate: waitRate,
+      waitMaxChargeMinutes: maxMinutes,
       sortOrder,
     };
     if (row) {
@@ -135,6 +154,52 @@ function RideTypeForm({ row, onClose }: { row?: RideTypeRow; onClose: () => void
           A ride type is also a vehicle type: drivers register their vehicle as <span className="font-mono">{form.code || "this code"}</span> and only drivers with
           that vehicle type are offered these rides.
         </p>
+        <div className="rounded-xl border border-slate-200 p-3">
+          <label className="flex items-center gap-3 text-sm font-medium text-slate-800">
+            <input type="checkbox" checked={form.licenseRequired} onChange={(event) => setForm({ ...form, licenseRequired: event.target.checked })} />
+            Drivers must provide a driving licence
+          </label>
+          <p className="mt-1 text-xs text-slate-500">
+            Switch off for vehicles that need no licence (e.g. E-Rickshaw): the licence number, expiry and document become optional for these drivers. Aadhaar, profile photo and a vehicle stay required.
+          </p>
+        </div>
+        <div className="rounded-xl border border-slate-200 p-3">
+          <p className="text-sm font-medium text-slate-800">How fares are charged</p>
+          <div className="mt-2 grid gap-2 sm:grid-cols-2">
+            {(
+              [
+                { value: "METERED", title: "Metered", body: "The fare is recalculated from the actual time and distance when the trip ends (capped at 1.5× the estimate)." },
+                { value: "UPFRONT", title: "Upfront", body: "The price quoted at booking is the price. Only a wait at the pickup adds to it, and a trip ended well short of the drop-off costs less." },
+              ] as const
+            ).map((option) => (
+              <label
+                key={option.value}
+                className={`flex cursor-pointer gap-3 rounded-lg border p-3 text-sm ${form.pricingMode === option.value ? "border-bhagwa-500 bg-bhagwa-50" : "border-slate-200"}`}
+              >
+                <input type="radio" name="pricingMode" checked={form.pricingMode === option.value} onChange={() => setForm({ ...form, pricingMode: option.value })} />
+                <span>
+                  <span className="block font-semibold text-slate-900">{option.title}</span>
+                  <span className="block text-xs text-slate-600">{option.body}</span>
+                </span>
+              </label>
+            ))}
+          </div>
+          <div className={`mt-3 grid grid-cols-3 gap-3 ${form.pricingMode === "UPFRONT" ? "" : "opacity-60"}`}>
+            <FormField label="Free wait (min)" hint="Free minutes at the pickup">
+              <input inputMode="numeric" value={form.waitFreeMinutes} onChange={(event) => setForm({ ...form, waitFreeMinutes: event.target.value })} className={inputClass} />
+            </FormField>
+            <FormField label="Waiting rate (₹/min)" hint="0 = waiting is free">
+              <input inputMode="decimal" value={form.waitPerMinuteRate} onChange={(event) => setForm({ ...form, waitPerMinuteRate: event.target.value })} className={inputClass} />
+            </FormField>
+            <FormField label="Max charged (min)" hint="Cap on billed minutes">
+              <input inputMode="numeric" value={form.waitMaxChargeMinutes} onChange={(event) => setForm({ ...form, waitMaxChargeMinutes: event.target.value })} className={inputClass} />
+            </FormField>
+          </div>
+          <p className="mt-2 text-xs text-slate-500">
+            Waiting is charged only on upfront rides, from the driver&apos;s arrival to the start of the trip, past the free minutes and rounded up to whole minutes. Quote validity, the ETA buffer and the early-drop threshold are on the Ride limits page.
+            {row && " Rides already booked keep the terms they were booked with."}
+          </p>
+        </div>
         {!row && (
           <div className="rounded-xl border border-slate-200 p-3">
             <p className="text-sm font-medium text-slate-800">Trip distance limits</p>
@@ -230,12 +295,13 @@ export function RideTypesPage() {
       {update.error && !toggling && <Notice tone="error">{update.error.message}</Notice>}
       <section className="overflow-hidden rounded-xl border border-slate-200 bg-white shadow-sm">
         <LoadState pending={isPending} error={error} empty={data?.length === 0}>
-          <Table head={["Ride type", "Seats", "Tariff", "Trip distance", "Bookable", ""]}>
+          <Table head={["Ride type", "Seats", "Tariff", "Charging", "Trip distance", "Bookable", ""]}>
             {data?.map((row) => (
               <tr key={row.rideType.code} className={row.rideType.isActive ? "" : "bg-slate-50/60"}>
                 <td className={cell}>
                   <p className="font-semibold text-slate-900">{row.rideType.displayName}</p>
                   <p className="font-mono text-xs text-slate-500">{row.rideType.code}</p>
+                  {!row.rideType.licenseRequired && <p className="text-xs text-amber-700">Driving licence optional</p>}
                   {row.rideType.description && <p className="text-xs text-slate-500">{row.rideType.description}</p>}
                 </td>
                 <td className={`${cell} tabular-nums`}>{row.rideType.seatCapacity}</td>
@@ -249,6 +315,16 @@ export function RideTypesPage() {
                     <button type="button" onClick={() => setTariffFor(row)} className="font-semibold text-bhagwa-600 hover:underline">
                       Set tariff
                     </button>
+                  )}
+                </td>
+                <td className={cell}>
+                  {row.rideType.pricingMode === "UPFRONT" ? <Pill tone="green">Upfront</Pill> : <Pill>Metered</Pill>}
+                  {row.rideType.pricingMode === "UPFRONT" && (
+                    <span className="mt-1 block text-xs text-slate-500">
+                      {row.rideType.waitPerMinuteRate > 0
+                        ? `Wait ${formatMoney(row.rideType.waitPerMinuteRate)}/min after ${row.rideType.waitFreeMinutes} min (max ${row.rideType.waitMaxChargeMinutes})`
+                        : "Waiting is free"}
+                    </span>
                   )}
                 </td>
                 <td className={cell}>

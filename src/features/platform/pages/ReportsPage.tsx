@@ -10,6 +10,7 @@ import type {
   CancellationsReport,
   CustomersReport,
   DriversReport,
+  FareQuotesReport,
   OverviewReport,
   Preset,
   PromotionsReport,
@@ -18,8 +19,9 @@ import type {
   RidesReport,
 } from "../api";
 
-type Tab = "overview" | "rides" | "revenue" | "drivers" | "customers" | "cancellations" | "promotions";
-const TABS: Tab[] = ["overview", "rides", "revenue", "drivers", "customers", "cancellations", "promotions"];
+type Tab = "overview" | "rides" | "revenue" | "drivers" | "customers" | "cancellations" | "promotions" | "quotes";
+const TABS: Tab[] = ["overview", "rides", "revenue", "drivers", "customers", "cancellations", "promotions", "quotes"];
+const TAB_LABELS: Record<string, string> = { quotes: "Fare quotes" };
 const PRESETS: Preset[] = ["TODAY", "YESTERDAY", "LAST_7_DAYS", "LAST_30_DAYS", "CUSTOM"];
 const money = (value: number) => formatMoney(value);
 const count = (value: number) => value.toLocaleString("en-IN");
@@ -339,6 +341,86 @@ function Promotions({ range }: { range: RangeQuery }) {
   );
 }
 
+const signedMoney = (value: number) => (value < 0 ? `− ${money(Math.abs(value))}` : money(value));
+
+/** Quote versus the trip actually made, for upfront ride types: the evidence for tuning the ETA buffer. */
+function FareQuotes({ range }: { range: RangeQuery }) {
+  const { data, error, isPending } = useReport<FareQuotesReport>("fare-quotes", range);
+  return (
+    <LoadState pending={isPending} error={error}>
+      {data && (
+        <div className="space-y-5">
+          {data.totals.rides === 0 ? (
+            <p className="rounded-xl border border-dashed border-slate-300 bg-white p-6 text-sm text-slate-500">
+              No completed upfront rides in this range. Switch a ride type to Upfront on the <Link to="/ride-types" className="font-semibold text-bhagwa-600 hover:underline">Ride types</Link> page, then check back.
+            </p>
+          ) : (
+            <>
+              <Grid>
+                <StatCard label="Upfront rides" value={count(data.totals.rides)} />
+                <StatCard label="Locked quotes" value={money(data.totals.quoted)} />
+                <StatCard label="Billed for the trip" value={money(data.totals.billed)} hint="Quote, or less after an early drop" />
+                <StatCard label="Meter would have charged" value={money(data.totals.metered)} />
+                <StatCard
+                  label="Difference vs meter"
+                  value={signedMoney(data.totals.variance)}
+                  tone={data.totals.variance < 0 ? "warn" : "good"}
+                  hint={`${data.totals.variancePercent > 0 ? "+" : ""}${data.totals.variancePercent}% · negative means Tirvona absorbed it`}
+                />
+                <StatCard label="Billed below the meter" value={count(data.totals.absorbedRides)} tone="warn" hint={`Cost ${money(Math.abs(data.totals.absorbed))}`} />
+                <StatCard label="Early drops" value={count(data.totals.earlyDrops)} />
+                <StatCard label="Waiting charges" value={money(data.totals.waitingCharges)} hint={`${data.totals.waitingRides} rides`} />
+              </Grid>
+
+              <Section title="By ride type">
+                <Table head={["Ride type", "Rides", "Quoted", "Billed", "Meter", "Difference", "Billed below meter", "Early drops"]}>
+                  {data.byRideType.map((row) => (
+                    <tr key={row.rideType}>
+                      <td className={cell}>{titleCase(row.rideType)}</td>
+                      <td className={`${cell} tabular-nums`}>{row.rides}</td>
+                      <td className={`${cell} tabular-nums`}>{money(row.quoted)}</td>
+                      <td className={`${cell} tabular-nums`}>{money(row.billed)}</td>
+                      <td className={`${cell} tabular-nums`}>{money(row.metered)}</td>
+                      <td className={`${cell} tabular-nums ${row.variance < 0 ? "text-red-700" : ""}`}>
+                        {signedMoney(row.variance)} ({row.variancePercent}%)
+                      </td>
+                      <td className={`${cell} tabular-nums`}>
+                        {row.absorbedRides} · {money(Math.abs(row.absorbed))}
+                      </td>
+                      <td className={`${cell} tabular-nums`}>{row.earlyDrops}</td>
+                    </tr>
+                  ))}
+                </Table>
+              </Section>
+
+              <Section title="Routes where Tirvona absorbed the most">
+                <p className="mb-3 text-xs text-slate-500">Pickup and drop-off grouped into roughly 1 km cells, worst first. A route that is always negative is under-priced or needs a bigger ETA buffer.</p>
+                <Table head={["Route", "Ride type", "Rides", "Quoted", "Meter", "Difference"]}>
+                  {data.byRoute.map((row) => (
+                    <tr key={`${row.rideType}-${row.pickup.latitude}-${row.pickup.longitude}-${row.destination.latitude}-${row.destination.longitude}`}>
+                      <td className={cell}>
+                        <span className="block font-medium text-slate-900">{row.pickup.address}</span>
+                        <span className="block text-xs text-slate-500">→ {row.destination.address}</span>
+                      </td>
+                      <td className={cell}>{titleCase(row.rideType)}</td>
+                      <td className={`${cell} tabular-nums`}>{row.rides}</td>
+                      <td className={`${cell} tabular-nums`}>{money(row.quoted)}</td>
+                      <td className={`${cell} tabular-nums`}>{money(row.metered)}</td>
+                      <td className={`${cell} tabular-nums ${row.variance < 0 ? "text-red-700" : ""}`}>
+                        {signedMoney(row.variance)} ({row.variancePercent}%)
+                      </td>
+                    </tr>
+                  ))}
+                </Table>
+              </Section>
+            </>
+          )}
+        </div>
+      )}
+    </LoadState>
+  );
+}
+
 export function ReportsPage() {
   const [params, setParams] = useSearchParams();
   const tab = TABS.find((value) => value === params.get("tab")) ?? "overview";
@@ -357,7 +439,7 @@ export function ReportsPage() {
     <div className="mx-auto max-w-6xl space-y-5">
       <PageHeader title="Reports" subtitle={`Aggregated from the live records · days in India time · refreshed ${formatDateTime(new Date().toISOString())}`} />
       <div className="flex flex-wrap items-center gap-3">
-        <FilterTabs<Preset> label="Date range" options={PRESETS} value={preset} onChange={(value) => update({ preset: value ?? "LAST_7_DAYS" })} render={(value) => titleCase(value ?? "")} />
+        <FilterTabs<Preset> label="Date range" options={PRESETS} value={preset} onChange={(value) => update({ preset: value ?? "LAST_7_DAYS" })} render={(value) => (value ? (TAB_LABELS[value] ?? titleCase(value)) : "")} />
         {preset === "CUSTOM" && (
           <form
             className="flex flex-wrap items-center gap-2"
@@ -387,6 +469,7 @@ export function ReportsPage() {
           {tab === "customers" && <Customers range={range} />}
           {tab === "cancellations" && <Cancellations range={range} />}
           {tab === "promotions" && <Promotions range={range} />}
+          {tab === "quotes" && <FareQuotes range={range} />}
         </>
       )}
     </div>

@@ -57,6 +57,8 @@ export interface VehicleSummary {
 
 export interface DriverDetail {
   driver: DriverSummary;
+  /** False when the driver's vehicle type does not need a driving licence. */
+  licenseRequired: boolean;
   user: {
     id: string;
     firstName: string;

@@ -3,10 +3,11 @@ import type { ReactNode } from "react";
 import { AlertTriangle, ArrowLeft, Ban, CheckCircle2, Loader2, MapPin, XCircle } from "lucide-react";
 import { Link, useParams } from "react-router-dom";
 import { formatDateTime, formatKm, formatMinutes, formatMoney, titleCase } from "@/lib/format";
-import { ADMIN_CANCELLABLE, useCancelRide, useCompleteRide, useRide } from "../api/rides";
+import { ADMIN_CANCELLABLE, useAdjustFare, useCancelRide, useCompleteRide, useRide } from "../api/rides";
 import type { RideDetail, RideLocation } from "../api/rides";
 import { CancelRideDialog } from "../components/CancelRideDialog";
 import { CompleteRideDialog } from "../components/CompleteRideDialog";
+import { FareAdjustmentDialog } from "../components/FareAdjustmentDialog";
 import { COMPLETION_LABELS } from "../components/RideEndBadge";
 import { RideStatusBadge } from "../components/RideStatusBadge";
 import { RidePaymentBadge } from "@/features/payments/components/PaymentBadges";
@@ -98,6 +99,8 @@ export function RideDetailPage() {
   const { data, error, isPending } = useRide(id);
   const cancel = useCancelRide();
   const complete = useCompleteRide();
+  const adjustFare = useAdjustFare();
+  const [adjusting, setAdjusting] = useState(false);
   const [cancelling, setCancelling] = useState(false);
   const [completing, setCompleting] = useState(false);
 
@@ -120,6 +123,10 @@ export function RideDetailPage() {
   const canCancel = ADMIN_CANCELLABLE.includes(ride.status);
   // A circuit ends through its own flow (admin → circuit bookings), not the end-of-trip OTP.
   const canComplete = ride.status === "RIDE_STARTED" && ride.kind !== "CIRCUIT";
+  // A bill can be corrected only until the customer starts paying.
+  const canAdjustFare = ride.status === "COMPLETED" && ride.kind !== "CIRCUIT" && ride.paymentStatus === "PENDING" && Boolean(ride.fare.final);
+  const upfront = ride.fare.pricingMode === "UPFRONT";
+  const final = ride.fare.final;
 
   return (
     <div className="mx-auto max-w-6xl space-y-5">
@@ -221,6 +228,14 @@ export function RideDetailPage() {
         </Section>
 
         <Section title="Fare">
+          <p className="-mt-2 mb-3 flex items-center gap-2 text-xs text-slate-500">
+            {upfront ? (
+              <span className="rounded-full bg-emerald-50 px-2 py-0.5 font-semibold text-emerald-700">Upfront · price locked at booking</span>
+            ) : (
+              <span className="rounded-full bg-slate-100 px-2 py-0.5 font-semibold text-slate-600">Metered</span>
+            )}
+            {upfront && ride.fare.quotedAt && <span>quoted {formatDateTime(ride.fare.quotedAt)}</span>}
+          </p>
           <FareRow label="Base fare" value={formatMoney(ride.fare.baseFare)} />
           <FareRow
             label={`Distance (${formatMoney(ride.fare.perKmRate)}/km)`}
@@ -242,7 +257,23 @@ export function RideDetailPage() {
             value={formatMoney(ride.fare.minimumFare)}
           />
           <div className="mt-2 border-t border-slate-100 pt-2">
-            <FareRow label="Estimated fare" value={formatMoney(ride.fare.estimatedFare)} strong />
+            <FareRow label={upfront ? "Quoted fare (locked)" : "Estimated fare"} value={formatMoney(ride.fare.estimatedFare)} strong />
+            {upfront && final?.earlyDrop && (
+              <FareRow label="Early drop (billed on distance travelled)" value={formatMoney(final.total - (final.waitingCharge ?? 0) - (final.adjustmentsTotal ?? 0))} />
+            )}
+            {upfront && !!final?.waitingCharge && (
+              <FareRow
+                label={`Waiting (${final.waitingChargeableMinutes} min charged, ${Math.round((final.waitingSeconds ?? 0) / 60)} min waited)`}
+                value={`+ ${formatMoney(final.waitingCharge)}`}
+              />
+            )}
+            {ride.fare.adjustments?.map((adjustment) => (
+              <FareRow
+                key={adjustment.at}
+                label={`${adjustment.type === "CREDIT" ? "Credit" : "Charge"}: ${adjustment.reason}`}
+                value={`${adjustment.amount < 0 ? "−" : "+"} ${formatMoney(Math.abs(adjustment.amount))}`}
+              />
+            ))}
             <FareRow label="Final fare" value={formatMoney(ride.fare.finalFare)} strong />
             {ride.promo && (
               <>
@@ -251,7 +282,24 @@ export function RideDetailPage() {
               </>
             )}
           </div>
-          {ride.promo && <p className="mt-1 text-xs text-slate-500">Discount funded by Tirvona; the driver earns on the full fare.</p>}
+          {ride.promo && <p className="mt-1 text-xs text-slate-500">Discount funded by Tirvona; the driver earns on the full fare.{upfront ? " On upfront rides it applies to the fare, not the waiting charge." : ""}</p>}
+          {upfront && ride.waiting && (
+            <p className="mt-1 text-xs text-slate-500">
+              Waiting terms frozen at booking: {ride.waiting.freeMinutes} min free, then {formatMoney(ride.waiting.perMinuteRate)}/min, up to {ride.waiting.maxChargeMinutes} min.
+            </p>
+          )}
+          {canAdjustFare && (
+            <button
+              type="button"
+              onClick={() => setAdjusting(true)}
+              className="mt-3 rounded-lg border border-slate-300 px-3 py-1.5 text-sm font-semibold text-slate-700 hover:bg-slate-50"
+            >
+              Adjust fare
+            </button>
+          )}
+          {ride.status === "COMPLETED" && !canAdjustFare && ride.paymentStatus !== "NOT_REQUIRED" && ride.kind !== "CIRCUIT" && (
+            <p className="mt-2 text-xs text-slate-500">The fare can no longer be adjusted because payment has started. After payment, use a refund.</p>
+          )}
           <p className="mt-2 text-xs text-slate-500">Tariff version {ride.pricingVersion}</p>
           <div className="mt-3 flex items-center justify-between border-t border-slate-100 pt-3 text-sm">
             <span className="text-slate-700">Payment</span>
@@ -451,6 +499,20 @@ export function RideDetailPage() {
             setCompleting(false);
           }}
           onConfirm={(note) => complete.mutate({ id: ride.id, note }, { onSuccess: () => setCompleting(false) })}
+        />
+      )}
+
+      {adjusting && (
+        <FareAdjustmentDialog
+          rideCode={ride.rideCode}
+          payable={ride.fare.payableFare ?? ride.fare.finalFare ?? 0}
+          isSubmitting={adjustFare.isPending}
+          error={adjustFare.error?.message ?? null}
+          onCancel={() => {
+            adjustFare.reset();
+            setAdjusting(false);
+          }}
+          onConfirm={(adjustment) => adjustFare.mutate({ id: ride.id, ...adjustment }, { onSuccess: () => setAdjusting(false) })}
         />
       )}
 

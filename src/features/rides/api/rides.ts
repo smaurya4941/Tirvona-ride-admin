@@ -54,6 +54,46 @@ export interface RideLocation {
   longitude: number;
 }
 
+export type PricingMode = "UPFRONT" | "METERED";
+
+/** The frozen final bill (absent until completion). Upfront rides carry the extra fields. */
+export interface RideFinalFare {
+  distanceMeters: number;
+  durationSeconds: number;
+  total: number;
+  discount: number;
+  payable: number;
+  /** Upfront: the locked quote the bill started from. */
+  quotedFare?: number;
+  waitingCharge?: number;
+  waitingSeconds?: number;
+  waitingChargeableMinutes?: number;
+  /** Upfront: ended short of the drop-off and billed on the distance travelled. */
+  earlyDrop?: boolean;
+  /** Signed total of manual adjustments. */
+  adjustmentsTotal?: number;
+}
+
+export interface FareAdjustment {
+  type: "CREDIT" | "CHARGE";
+  /** Signed rupees: negative lowers the fare. */
+  amount: number;
+  reason: string;
+  at: string;
+}
+
+/** Upfront rides: the waiting terms and what has been waited. */
+export interface RideWaiting {
+  freeMinutes: number;
+  perMinuteRate: number;
+  maxChargeMinutes: number;
+  waitedSeconds: number;
+  chargeableMinutes: number;
+  currentCharge: number;
+  running: boolean;
+  capped: boolean;
+}
+
 export interface RideFare {
   currency: string;
   baseFare: number;
@@ -72,6 +112,12 @@ export interface RideFare {
   finalFare?: number;
   discount?: number;
   payableFare?: number;
+  /** Absent on rides booked before upfront fares = METERED. */
+  pricingMode?: PricingMode;
+  quotedFare?: number;
+  quotedAt?: string;
+  final?: RideFinalFare;
+  adjustments?: FareAdjustment[];
 }
 
 export interface RideBase {
@@ -88,6 +134,7 @@ export interface RideBase {
   durationSeconds: number;
   routeProvider: string;
   fare: RideFare;
+  waiting?: RideWaiting;
   requestedAt: string;
   assignedAt?: string;
   acceptedAt?: string;
@@ -239,6 +286,28 @@ export function useCompleteRide() {
       Promise.all([
         queryClient.invalidateQueries({ queryKey: keys.all }),
         queryClient.invalidateQueries({ queryKey: ["admin", "dashboard"] }),
+      ]),
+  });
+}
+
+/** Ops corrects the fare of a completed ride before its payment starts; audited, appended to the ride. */
+export function useAdjustFare() {
+  const queryClient = useQueryClient();
+  return useMutation({
+    mutationFn: ({
+      id,
+      ...body
+    }: {
+      id: string;
+      type: "CREDIT" | "CHARGE";
+      amount: number;
+      reason: string;
+      customerConsent?: boolean;
+    }) => apiClient.post(`/admin/rides/${id}/fare-adjustments`, body),
+    onSuccess: () =>
+      Promise.all([
+        queryClient.invalidateQueries({ queryKey: keys.all }),
+        queryClient.invalidateQueries({ queryKey: ["admin", "payments"] }),
       ]),
   });
 }

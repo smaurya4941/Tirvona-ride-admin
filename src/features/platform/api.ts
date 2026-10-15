@@ -88,6 +88,14 @@ export const RIDE_TYPE_ICONS = ["bike", "auto", "e_rickshaw", "cab", "cab_xl", "
 /** Matches the server limit; a bus seats far more than a cab. */
 export const MAX_SEAT_CAPACITY = 60;
 
+export type PricingMode = "UPFRONT" | "METERED";
+/** Matches the server limits on the waiting terms. */
+export const WAITING_LIMITS = {
+  freeMinutes: { min: 0, max: 30 },
+  perMinuteRate: { min: 0, max: 100 },
+  maxChargeMinutes: { min: 0, max: 120 },
+} as const;
+
 export interface RideTypeRow {
   rideType: {
     id: string;
@@ -97,6 +105,13 @@ export interface RideTypeRow {
     icon: string;
     vehicleType: VehicleType;
     seatCapacity: number;
+    /** Drivers of this vehicle type must provide a driving licence for KYC. */
+    licenseRequired: boolean;
+    /** UPFRONT: the fare quoted at booking is the fare. METERED: recalculated at completion. */
+    pricingMode: PricingMode;
+    waitFreeMinutes: number;
+    waitPerMinuteRate: number;
+    waitMaxChargeMinutes: number;
     sortOrder: number;
     isActive: boolean;
     updatedAt: string;
@@ -110,6 +125,11 @@ export interface CreateRideTypeInput {
   description?: string;
   icon: string;
   seatCapacity: number;
+  licenseRequired?: boolean;
+  pricingMode?: PricingMode;
+  waitFreeMinutes?: number;
+  waitPerMinuteRate?: number;
+  waitMaxChargeMinutes?: number;
   sortOrder?: number;
   isActive?: boolean;
   pricing?: { baseFare: number; perKmRate: number; perMinuteRate: number; minimumFare: number };
@@ -461,6 +481,34 @@ export interface PromotionsReport {
   range: RangeView;
   totals: Record<"promos" | "activePromos" | "liveNow" | "applied" | "redeemed" | "released" | "discountGiven" | "promoAssistedRides" | "promoAssistedValue", number>;
   top: Array<{ code: string; title: string; redeemed: number; discount: number; applied: number }>;
+}
+
+/** One row of the quote-versus-actual report (rupees; variance = billed − metered, negative = Tirvona absorbed). */
+export interface FareQuoteRow {
+  rides: number;
+  quoted: number;
+  billed: number;
+  metered: number;
+  variance: number;
+  variancePercent: number;
+  absorbedRides: number;
+  absorbed: number;
+  earlyDrops: number;
+  waitingCharges: number;
+  waitingRides: number;
+}
+export interface FareQuotesReport {
+  range: RangeView;
+  rideType?: string;
+  totals: FareQuoteRow;
+  byRideType: Array<FareQuoteRow & { rideType: string }>;
+  byRoute: Array<
+    FareQuoteRow & {
+      rideType: string;
+      pickup: { latitude: number; longitude: number; address: string };
+      destination: { latitude: number; longitude: number; address: string };
+    }
+  >;
 }
 
 export function useReport<T>(name: string, range: RangeQuery) {

@@ -38,11 +38,20 @@ export interface RideDistanceList {
 export interface RadiusBounds {
   matchingRadiusKm: { min: number; max: number };
   nearbyDriversRadiusKm: { min: number; max: number };
+  quoteValiditySeconds: { min: number; max: number };
+  etaBufferPercent: { min: number; max: number };
+  earlyDropThresholdPercent: { min: number; max: number };
 }
 
 export interface PlatformSettings {
   matchingRadiusKm: number;
   nearbyDriversRadiusKm: number;
+  /** Upfront fares: how long a quote can be confirmed. */
+  quoteValiditySeconds: number;
+  /** Upfront fares: percent added to the route ETA when quoting. */
+  etaBufferPercent: number;
+  /** Upfront fares: below this percent of the booked distance a trip is an early drop. */
+  earlyDropThresholdPercent: number;
   version: number;
   updatedBy?: string;
   updatedAt: string;
@@ -71,7 +80,7 @@ export const usePlatformSettings = () => useApi<PlatformSettingsResponse>(settin
 
 export const useUpdatePlatformSettings = () =>
   useApiMutation(
-    (changes: { matchingRadiusKm?: number; nearbyDriversRadiusKm?: number }) =>
+    (changes: Partial<Omit<PlatformSettings, "version" | "updatedBy" | "updatedAt">>) =>
       apiClient.patch<ApiSuccess<PlatformSettingsResponse>>("/admin/platform-settings", changes),
     refreshes,
   );

@@ -118,7 +118,8 @@ export function DriverDetailPage() {
     );
   }
 
-  const { driver, user, documents, vehicles } = data;
+  const { driver, user, documents, vehicles, licenseRequired } = data;
+  const licenceNote = licenseRequired ? undefined : "Not required for this vehicle type";
   // Mirrors the server's state machine: only UNDER_REVIEW can be decided.
   const canDecide = driver.driverStatus === "UNDER_REVIEW";
   // Admin override: also open to PENDING (no KYC submitted) and REJECTED drivers.
@@ -239,8 +240,8 @@ export function DriverDetailPage() {
           <dl className="grid grid-cols-2 gap-4">
             <Field label="Phone" value={user.phone} />
             <Field label="Email" value={user.email} />
-            <Field label="Licence number" value={driver.licenseNumber} />
-            <Field label="Licence expiry" value={formatDate(driver.licenseExpiry)} />
+            <Field label="Licence number" value={driver.licenseNumber ?? licenceNote} />
+            <Field label="Licence expiry" value={driver.licenseExpiry ? formatDate(driver.licenseExpiry) : licenceNote} />
             <Field label="Date of birth" value={formatDate(driver.dateOfBirth)} />
             <Field label="Phone verified" value={user.isPhoneVerified ? "Yes" : "No"} />
             <div className="col-span-2">
